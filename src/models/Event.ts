@@ -1,16 +1,11 @@
 import mongoose, { Schema, Model, Document, Types } from "mongoose";
 import {
-  SPORTS_BY_GENDER,
+  ALL_SPORTS,
   GENDERS,
   EVENT_STATUSES,
   type EventStatus,
   type Gender,
 } from "@/types";
-
-/** كل الرياضات المسموح بها في أي فئة (بنين + فتيات) */
-const ALL_SPORTS = [
-  ...new Set<string>([...(SPORTS_BY_GENDER.بنين ?? []), ...(SPORTS_BY_GENDER.فتيات ?? [])]),
-];
 
 /**
  * فعالية / مسابقة رياضية.

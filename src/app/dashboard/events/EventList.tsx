@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   SPORTS,
+  ALL_SPORTS,
   SPORTS_BY_GENDER,
   GENDERS,
   GENDER_LABELS,
@@ -155,13 +156,15 @@ export function EventList({
             className="px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white"
           >
             <option value="all">جميع الألعاب الرياضية</option>
-            {(SPORTS_BY_GENDER[(genderFilter === "all" ? "بنين" : genderFilter) as Gender] ?? SPORTS).map(
-              (s: string) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ),
-            )}
+            {(
+              genderFilter === "all"
+                ? ALL_SPORTS
+                : (SPORTS_BY_GENDER[genderFilter as Gender] ?? SPORTS)
+            ).map((s: string) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
           </select>
 
           <select

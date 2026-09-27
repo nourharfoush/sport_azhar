@@ -102,6 +102,11 @@ export const SPORTS_BY_GENDER: Record<Gender, readonly string[]> = {
   فتيات: [...SPORTS, ...FEMALE_ONLY_SPORTS],
 };
 
+/** كل الرياضات المسموح بها في أي فئة (بنين + فتيات بدون تكرار) */
+export const ALL_SPORTS: readonly string[] = [
+  ...new Set<string>([...SPORTS, ...FEMALE_ONLY_SPORTS]),
+];
+
 /** التحقق من صحة اللعبة بالنسبة للفئة المختارة */
 export function isSportValid(gender: string, sport: string): boolean {
   const list = SPORTS_BY_GENDER[gender as Gender] ?? SPORTS;
