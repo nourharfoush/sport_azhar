@@ -1,11 +1,11 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 import { dbConnect } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { Region } from "@/models/Region";
 import { Administration } from "@/models/Administration";
-import { Institute, STAGES } from "@/models/Institute";
+import { Institute, STAGES, INSTITUTE_TYPES, type InstituteType } from "@/models/Institute";
 import { FollowUp } from "@/models/FollowUp";
 import { User } from "@/models/User";
 import { Event } from "@/models/Event";
@@ -259,6 +259,7 @@ export async function createInstituteAction(
   const name = String(formData.get("name") ?? "").trim();
   const code = String(formData.get("code") ?? "").trim().toUpperCase();
   const stage = String(formData.get("stage") ?? "الإعدادي");
+  const type = String(formData.get("type") ?? "مشترك").trim() as InstituteType;
   const administrationId =
     session.role === "administration"
       ? session.administrationId
@@ -269,6 +270,9 @@ export async function createInstituteAction(
   }
   if (!STAGES.includes(stage as (typeof STAGES)[number])) {
     return { success: false, error: "المرحلة التعليمية غير صحيحة." };
+  }
+  if (!INSTITUTE_TYPES.includes(type as (typeof INSTITUTE_TYPES)[number])) {
+    return { success: false, error: "نوع المعهد غير صحيح." };
   }
 
   await dbConnect();
@@ -289,6 +293,7 @@ export async function createInstituteAction(
       name,
       code,
       stage,
+      type,
       administration: administrationId,
     });
 
@@ -318,6 +323,7 @@ export async function updateInstituteAction(
   const name = String(formData.get("name") ?? "").trim();
   const code = String(formData.get("code") ?? "").trim().toUpperCase();
   const stage = String(formData.get("stage") ?? "الإعدادي");
+  const type = String(formData.get("type") ?? "مشترك").trim() as InstituteType;
   const administrationId = String(formData.get("administrationId") ?? "").trim();
 
   if (!id || !name || !code) {
@@ -325,6 +331,9 @@ export async function updateInstituteAction(
   }
   if (!STAGES.includes(stage as (typeof STAGES)[number])) {
     return { success: false, error: "المرحلة التعليمية غير صحيحة." };
+  }
+  if (!INSTITUTE_TYPES.includes(type as (typeof INSTITUTE_TYPES)[number])) {
+    return { success: false, error: "نوع المعهد غير صحيح." };
   }
 
   await dbConnect();
@@ -364,6 +373,7 @@ export async function updateInstituteAction(
     inst.name = name;
     inst.code = code;
     inst.stage = stage;
+    inst.type = type;
     inst.administration = targetAdminId;
     await inst.save();
 
@@ -415,5 +425,6 @@ export async function deleteInstituteAction(
     return { success: false, error: err.message || "فشل حذف المعهد." };
   }
 }
+
 
 

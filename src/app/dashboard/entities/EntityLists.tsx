@@ -328,6 +328,8 @@ export function EntityLists({
       <InstituteModals
         role={role}
         userAdminId={userAdminId || undefined}
+        userRegionId={userRegionId}
+        regions={regions}
         administrations={administrations}
         modalState={instituteModal}
         onClose={() => setInstituteModal({ type: null })}

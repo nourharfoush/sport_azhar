@@ -1,12 +1,15 @@
 import mongoose, { Schema, Model, Document, Types } from "mongoose";
+import { STAGES, INSTITUTE_TYPES, type InstituteType } from "@/types";
 
-export const STAGES = ["الابتدائي", "الإعدادي", "الثانوي"] as const;
+export { STAGES, INSTITUTE_TYPES };
+export type { InstituteType };
 
 export interface IInstitute extends Document {
   name: string;
   code: string;
   administration: Types.ObjectId;
   stage: string;
+  type: InstituteType;
   createdAt: Date;
 }
 
@@ -20,6 +23,7 @@ const InstituteSchema = new Schema<IInstitute>(
       required: true,
     },
     stage: { type: String, enum: STAGES, default: "الإعدادي" },
+    type: { type: String, enum: INSTITUTE_TYPES, default: "مشترك" },
   },
   { timestamps: true },
 );

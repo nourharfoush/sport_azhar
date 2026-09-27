@@ -30,6 +30,7 @@ export function InstitutesTable({
               <th className="py-3 px-4">اسم المعهد</th>
               <th className="py-3 px-4">الكود</th>
               <th className="py-3 px-4">المرحلة</th>
+              <th className="py-3 px-4">النوع</th>
               <th className="py-3 px-4">الإدارة التعليمية</th>
               <th className="py-3 px-4">المنطقة الأزهرية</th>
               {canManageInstitutes && <th className="py-3 px-4 text-center">إجراءات</th>}
@@ -39,7 +40,7 @@ export function InstitutesTable({
             {filteredInstitutes.length === 0 ? (
               <tr>
                 <td
-                  colSpan={canManageInstitutes ? 6 : 5}
+                  colSpan={canManageInstitutes ? 7 : 6}
                   className="py-8 text-center text-slate-500"
                 >
                   لا توجد معاهد أزهرية تطابق شروط البحث.
@@ -72,6 +73,19 @@ export function InstitutesTable({
                         }`}
                       >
                         {inst.stage}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
+                          inst.type === "بنين"
+                            ? "bg-sky-50 text-sky-700 border-sky-200"
+                            : inst.type === "فتيات"
+                              ? "bg-pink-50 text-pink-700 border-pink-200"
+                              : "bg-slate-100 text-slate-700 border-slate-200"
+                        }`}
+                      >
+                        {inst.type || "مشترك"}
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-slate-700">{adminName}</td>

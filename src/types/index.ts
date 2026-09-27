@@ -127,6 +127,21 @@ export const MONTH_LABELS = [
   "ديسمبر",
 ] as const;
 
+
+// ─────────────────────────────────────────────────────────────
+// معاهد الأزهر: المراحل التعليمية وأنواع المعاهد
+// (ملف مشترك بين الخادم والمتصفح — لا يستورد Mongoose)
+// ─────────────────────────────────────────────────────────────
+
+export const STAGES = ["الابتدائي", "الإعدادي", "الثانوي"] as const;
+
+export type Stage = (typeof STAGES)[number];
+
+/** نوع المعهد من حيث الفئة (بنين/فتيات/مشترك). */
+export const INSTITUTE_TYPES = ["بنين", "فتيات", "مشترك"] as const;
+
+export type InstituteType = (typeof INSTITUTE_TYPES)[number];
+
 /** أسماء أيام الأسبوع بالعربية لعرض «اليوم» في الموعد. */
 export const WEEKDAY_LABELS = [
   "الأحد",

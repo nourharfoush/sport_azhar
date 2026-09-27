@@ -16,6 +16,7 @@ export interface InstituteItem {
   name: string;
   code: string;
   stage: string;
+  type?: string;
   administration:
     | {
         _id: string;
