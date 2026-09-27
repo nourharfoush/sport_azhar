@@ -1,36 +1,120 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# منظومة متابعة الفعاليات والمسابقات الرياضية - الأزهر الشريف 🏆
 
-## Getting Started
+نظام إلكتروني متكامل مبني بـ **Next.js 16 (App Router)**، **TypeScript**، **Tailwind CSS**، و **MongoDB (Mongoose)** لمتابعة وإدارة الأنشطة والبطولات الرياضية بالأزهر الشريف عبر مستويات المتابعة الإدارية الأربعة.
 
-First, run the development server:
+---
+
+## 🏛️ مستويات المتابعة بالمنظومة (الهيكل الهرمي)
+
+1. **الإدارة العامة للرعاية الرياضية (General Directorate)**
+   - رؤية شاملة لكافة مناطق الجمهورية.
+   - إطلاق البطولات المركزية السنوية العامة.
+   - متابعة مؤشرات ونسب المشاركة الوطنية.
+   - إنشاء وإدارة المناطق الأزهرية.
+
+2. **المناطق الأزهرية (Azhar Regions - مثل منطقة القاهرة)**
+   - إطلاق بطولات ومسابقات خاصة بالمنطقة.
+   - متابعة الإدارات التعليمية والمعاهد التابعة لها.
+   - إنشاء وإدارة الإدارات التعليمية داخل المنطقة.
+
+3. **الإدارات التعليمية (Educational Administrations - مثل إدارة مدينة نصر)**
+   - الإشراف المباشر على معاهد الإدارة (ابتدائي / إعدادي / ثانوي).
+   - تنظيم التصفيات المحلية وتجميع بيانات المعاهد.
+   - تسجيل المعاهد الجديدة في نطاق الإدارة.
+
+4. **المعاهد الأزهرية (Azhar Institutes)**
+   - تسجيل الفرق والطلاب المشاركين وقوام كل فريق.
+   - تحديث حالة المشاركة (مسجل، جارية، مكتملة، اعتذار).
+   - رصد النتائج، النقاط، والمراكز المحققة (الأول، الثاني...).
+
+---
+
+## 🔑 الحسابات النموذجية للتجربة (Seed Accounts)
+
+كلمة المرور الموحدة لجميع الحسابات التجريبية: **`azhar123`**
+
+| المستوى | البريد الإلكتروني | النطاق |
+| :--- | :--- | :--- |
+| **الإدارة العامة** | `general@azhar.edu.eg` | جمهورية مصر العربية |
+| **المنطقة الأزهرية** | `cairo.region@azhar.edu.eg` | منطقة القاهرة |
+| **الإدارة التعليمية** | `nasr.admin@azhar.edu.eg` | إدارة مدينة نصر |
+| **المعهد الأزهري** | `model.institute@azhar.edu.eg` | معهد مدينة نصر النموذجي بنين |
+
+---
+
+## ⚙️ متطلبات التشغيل
+
+- **Node.js** إصدار 18 فما فوق.
+- قاعدة بيانات **MongoDB** (محلياً أو عبر **MongoDB Atlas** السحابي).
+
+---
+
+## 🚀 التشغيل المحلي
 
 ```bash
+# 1. الدخول لمجلد المشروع
+cd azhar-sports-tracking
+
+# 2. إنشاء ملف البيئة
+cp .env.example .env.local
+
+# 3. إدخال البيانات التجريبية الأولية
+npm run seed
+
+# 4. تشغيل خادم التطوير
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+افتح المتصفح على: `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ☁️ 1. إعداد MongoDB Atlas (سحابياً مجاناً)
 
-## Learn More
+1. ادخل إلى [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) وأنشئ حساباً.
+2. أنشئ عنقوداً مجانياً (Free M0 Cluster).
+3. من **Database Access**: أنشئ مستخدم قاعدة بيانات (اسم مستخدم وكلمة مرور).
+4. من **Network Access**: أضف عنوان IP `0.0.0.0/0` (Allow access from anywhere) لتتمكن سيرفرات Vercel من الاتصال به.
+5. اضغط **Connect** واختر **Drivers** وانسخ الرابط الذي يشبه:
+   ```env
+   mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/azhar_sports?retryWrites=true&w=majority
+   ```
+6. ضع هذا الرابط في متغير `MONGODB_URI`.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🐙 2. الرفع على GitHub
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+cd azhar-sports-tracking
 
-## Deploy on Vercel
+# ربط المستودع البعيد (استبدل بالرابط الخاص بك)
+git remote add origin https://github.com/YOUR_USERNAME/azhar-sports-tracking.git
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# تسمية الفرع الرئيسي
+git branch -M main
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# إضافة التعديلات والالتزام
+git add .
+git commit -m "Initial commit: Azhar Sports Tracking System"
+
+# الرفع
+git push -u origin main
+```
+
+---
+
+## 🔺 3. النشر على Vercel
+
+1. ادخل إلى [Vercel](https://vercel.com) وسجّل الدخول بحساب GitHub الخاص بك.
+2. اضغط **Add New...** -> **Project**.
+3. اختر مستودع `azhar-sports-tracking` واضغط **Import**.
+4. في قسم **Environment Variables** أضف:
+   - `MONGODB_URI`: رابط MongoDB Atlas.
+   - `AUTH_SECRET`: سلسلة نصية عشوائية قوية لتشفير الـ JWT.
+5. اضغط **Deploy**.
+6. بعد اكتمال النشر، شغّل أمر البذر لمرة واحدة من جهازك مع وضع رابط Atlas في `.env.local` عبر:
+   ```bash
+   npm run seed
+   ```
+

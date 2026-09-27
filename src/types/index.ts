@@ -1,0 +1,78 @@
+// أدوار/مستويات المتابعة في النظام (بالترتيب الهرمي)
+export const ROLES = [
+  "general", // الإدارة العامة للرعاية الرياضية
+  "region", // المنطقة الأزهرية
+  "administration", // الإدارة التعليمية بالمناطق الأزهرية
+  "institute", // المعهد الأزهري
+] as const;
+
+export type Role = (typeof ROLES)[number];
+
+export const ROLE_LABELS: Record<Role, string> = {
+  general: "الإدارة العامة للرعاية الرياضية",
+  region: "المنطقة الأزهرية",
+  administration: "الإدارة التعليمية",
+  institute: "المعهد الأزهري",
+};
+
+// حالة متابعة الفعالية/المسابقة لكل معهد
+export const FOLLOWUP_STATUSES = [
+  "not_started", // لم تبدأ
+  "registered", // تم التسجيل
+  "ongoing", // جارية
+  "completed", // مكتملة
+  "withdrawn", // اعتذار/انسحاب
+] as const;
+
+export type FollowupStatus = (typeof FOLLOWUP_STATUSES)[number];
+
+export const FOLLOWUP_LABELS: Record<FollowupStatus, string> = {
+  not_started: "لم تبدأ",
+  registered: "تم التسجيل",
+  ongoing: "جارية",
+  completed: "مكتملة",
+  withdrawn: "اعتذار",
+};
+
+// حالة الفعالية نفسها
+export const EVENT_STATUSES = [
+  "draft", // مسودة
+  "published", // معلنة
+  "active", // جارية
+  "archived", // مؤرشفة
+] as const;
+
+export type EventStatus = (typeof EVENT_STATUSES)[number];
+
+export const EVENT_LABELS: Record<EventStatus, string> = {
+  draft: "مسودة",
+  published: "معلنة",
+  active: "جارية",
+  archived: "مؤرشفة",
+};
+
+// أنواع الرياضات/المسابقات المتاحة
+export const SPORTS = [
+  "كرة القدم",
+  "كرة الطائرة",
+  "كرة السلة",
+  "كرة اليد",
+  "تنس الطاولة",
+  "ألعاب قوى",
+  "الشطرنج",
+  "الكاراتيه",
+  "التايكوندو",
+  "السباحة",
+] as const;
+
+export type Sport = (typeof SPORTS)[number];
+
+export interface SessionUser {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  regionId: string | null;
+  administrationId: string | null;
+  instituteId: string | null;
+}
