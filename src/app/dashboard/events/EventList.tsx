@@ -18,8 +18,10 @@ interface EventListProps {
   userRole: Role;
   userRegionId: string | null;
   userAdminId: string | null;
-  /** إدارات المستخدم (مطلوبة لدور المنطقة عند إنشاء تصفيات إدارية) */
+  /** إدارات المستخدم (مطلوبة لدور المنطقة والإدارة العامة عند إنشاء تصفيات إدارية) */
   administrations: { _id: string; name: string }[];
+  /** المناطق المتاحة للاختيار (للإدارة العامة فقط) */
+  regions?: { _id: string; name: string }[];
 }
 
 export function EventList({
@@ -28,6 +30,7 @@ export function EventList({
   userRegionId,
   userAdminId,
   administrations,
+  regions = [],
 }: EventListProps) {
   const canCreate = userRole !== "institute";
 
@@ -215,6 +218,7 @@ export function EventList({
         error={formError}
         userRole={userRole}
         administrations={administrations}
+        regions={regions}
       />
 
       <EditEventModal

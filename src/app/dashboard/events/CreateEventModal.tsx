@@ -14,8 +14,10 @@ interface Props {
   error: string | null;
   /** دور المستخدم الحالي لتحديد مستويات المسابقة المتاحة */
   userRole: Role;
-  /** إدارات المنطقة الحالية (تُستخدم لدور المنطقة عند اختيار تصفيات إدارية) */
+  /** إدارات وخيارات المنطقة (للإدارة العامة تُمرَّر كل الإدارات) */
   administrations?: AdministrationOption[];
+  /** المناطق المتاحة للاختيار (للإدارة العامة فقط) */
+  regions?: AdministrationOption[];
 }
 
 export function CreateEventModal({
@@ -26,6 +28,7 @@ export function CreateEventModal({
   error,
   userRole,
   administrations = [],
+  regions = [],
 }: Props) {
   // مستوى المسابقة الافتراضي حسب الدور
   const defaultScope: EventScope =
@@ -34,8 +37,15 @@ export function CreateEventModal({
 
   if (!open) return null;
 
-  /** المناطق/الإدارة يمكنها الاختيار بين نهائي المنطقة وتصفيات الإدارة */
-  const canChooseScope = userRole === "region";
+  /** المنطقة والإدارة العامة تختاران بين كل المستويات */
+  const canChooseScope = userRole === "region" || userRole === "general";
+
+  /** عند اختيار إدارة من الإدارة العامة نحتاج كل الإدارات وكل المناطق */
+  const canPickRegion = userRole === "general" && scope === "region";
+  const canPickAdministration =
+    canChooseScope &&
+    scope === "administration" &&
+    (userRole === "general" || administrations.length > 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
@@ -66,13 +76,18 @@ export function CreateEventModal({
                 onChange={(e) => setScope(e.target.value as EventScope)}
                 className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30"
               >
+                {userRole === "general" && (
+                  <option value="general">{EVENT_SCOPE_LABELS.general}</option>
+                )}
                 <option value="region">{EVENT_SCOPE_LABELS.region}</option>
                 <option value="administration">{EVENT_SCOPE_LABELS.administration}</option>
               </select>
               <p className="text-[11px] text-slate-500 mt-1">
-                {scope === "region"
-                  ? "تُقام النهائيات بين المعاهد الفائزة من إدارات منطقتك وتظهر لكل المعاهد التابعة لها."
-                  : "تصفيات داخل إدارة تعليمية واحدة بمعهداتها."}
+                {userRole === "general" && scope === "general"
+                  ? "نهائيات على مستوى الجمهورية تظهر لكل المناطق الـ 27."
+                  : scope === "region"
+                    ? "تُقام النهائيات بين المعاهد الفائزة من إدارات منطقتها وتظهر لكل المعاهد التابعة لها."
+                    : "تصفيات داخل إدارة تعليمية واحدة بمعهداتها."}
               </p>
             </div>
           ) : (
@@ -89,15 +104,38 @@ export function CreateEventModal({
                 {EVENT_SCOPE_LABELS[defaultScope]}
               </div>
               <p className="text-[11px] text-slate-500 mt-1">
-                {userRole === "general"
-                  ? "تُنشأ مسابقاتك بمستوى نهائي الجمهورية وتظهر لكافة المناطق الـ 27."
-                  : "تُنشأ مسابقاتك على مستوى إدارتك التعليمية."}
+                تُنشأ مسابقاتك على مستوى إدارتك التعليمية.
               </p>
             </div>
           )}
 
-          {/* اختيار الإدارة عند تصفيات إدارات المنطقة */}
-          {canChooseScope && scope === "administration" && (
+          {/* اختيار المنطقة عند إطلاق نهائيات منطقة من الإدارة العامة */}
+          {canPickRegion && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                المنطقة الأزهرية المستضيفة *
+              </label>
+              <select
+                name="regionId"
+                required
+                defaultValue=""
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30"
+              >
+                <option value="">-- اختر المنطقة --</option>
+                {regions.map((r) => (
+                  <option key={r._id} value={r._id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-slate-500 mt-1">
+                النهائي يُعقد بين معاهد المنطقة المختارة فقط.
+              </p>
+            </div>
+          )}
+
+          {/* اختيار الإدارة عند تصفيات إدارية */}
+          {canPickAdministration && (
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 الإدارة التعليمية المستضيفة *
@@ -108,7 +146,9 @@ export function CreateEventModal({
                 defaultValue="all"
                 className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30"
               >
-                <option value="all">جميع الإدارات التعليمية بالمنطقة</option>
+                <option value="all">
+                  {userRole === "general" ? "جميع الإدارات التعليمية" : "جميع الإدارات التعليمية بالمنطقة"}
+                </option>
                 {administrations.map((a) => (
                   <option key={a._id} value={a._id}>
                     {a.name}
@@ -116,7 +156,9 @@ export function CreateEventModal({
                 ))}
               </select>
               <p className="text-[11px] text-slate-500 mt-1">
-                اختر «جميع الإدارات» لتعميم التصفيات على كل معاهد منطقتك، أو إدارة واحدة فقط. لا يمكن اختيار إدارة خارج منطقتك.
+                {userRole === "general"
+                  ? "اختر إدارة واحدة لإقامة التصفيات داخلها، أو «جميع الإدارات» لتعميمها على كل الإدارات."
+                  : "اختر «جميع الإدارات» لتعميم التصفيات على كل معاهد منطقتك، أو إدارة واحدة فقط. لا يمكن اختيار إدارة خارج منطقتك."}
               </p>
             </div>
           )}

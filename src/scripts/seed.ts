@@ -196,6 +196,18 @@ async function run() {
     createdBy: generalUser._id,
   });
 
+  // 5ب. مسابقة اللياقة البدنية على مستوى الجمهورية
+  const eventFitness = await Event.create({
+    title: "بطولة الجمهورية الأزهرية لللياقة البدنية",
+    sport: "اللياقة البدنية",
+    season: "2025/2026",
+    description:
+      "بطولة اللياقة البدنية لطلاب الأزهر على مستوى الجمهورية، وتشمل اختبارات اللياقة العامة والسرعة والقوة.",
+    scope: "general",
+    status: "published",
+    createdBy: generalUser._id,
+  });
+
   // 6. سجلات المتابعة للمسابقة
   await FollowUp.create({
     event: event1._id,
@@ -207,6 +219,17 @@ async function run() {
     score: "فوز في النهائي 2-1",
     rank: 1,
     notes: "فاز المعهد بكأس بطولة الجمهورية بعد أداء بطولي.",
+    updatedBy: instituteUser._id,
+  });
+
+  await FollowUp.create({
+    event: eventFitness._id,
+    institute: inst1._id,
+    region: cairo._id,
+    administration: nasrAdmin._id,
+    status: "registered",
+    teamSize: 12,
+    notes: "تسجيل فريق المعهد في بطولة اللياقة البدنية.",
     updatedBy: instituteUser._id,
   });
 

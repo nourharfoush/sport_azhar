@@ -8,6 +8,7 @@ import { FollowUp } from "@/models/FollowUp";
 import { ensureFollowUpsForEvent, getScopedInstitutes } from "@/lib/data";
 import { canManageScopedItem } from "@/lib/rbac";
 import { Administration } from "@/models/Administration";
+import { Region } from "@/models/Region";
 import { Institute } from "@/models/Institute";
 import { SPORTS, FOLLOWUP_STATUSES, EVENT_STATUSES, type EventStatus, type FollowupStatus, type EventScope } from "@/types";
 
@@ -25,7 +26,38 @@ async function resolveRequestedScope(
   const requested = String(formData.get("scope") ?? "").trim() as EventScope | "";
 
   if (session.role === "general") {
-    return { scope: "general", region: null, administration: null };
+    // الإدارة العامة تتحكم في كل المستويات: الجمهورية / المنطقة / الإدارة
+    if (!requested || requested === "general") {
+      return { scope: "general", region: null, administration: null };
+    }
+    if (requested === "region") {
+      const regionId = String(formData.get("regionId") ?? "").trim();
+      if (!regionId) {
+        return { error: "اختر المنطقة التي ستُقام لها نهائيات." };
+      }
+      const region = await Region.findById(regionId).select("_id");
+      if (!region) {
+        return { error: "المنطقة الأزهرية غير موجودة." };
+      }
+      return { scope: "region", region: String(region._id), administration: null };
+    }
+    // requested === "administration"
+    const administrationId = String(formData.get("administrationId") ?? "").trim();
+    if (!administrationId) {
+      return { error: "اختر الإدارة التعليمية التي ستُقام لها تصفيات." };
+    }
+    if (administrationId === "all") {
+      return { scope: "administration", region: null, administration: null };
+    }
+    const admin = await Administration.findById(administrationId).select("_id region");
+    if (!admin) {
+      return { error: "الإدارة التعليمية غير موجودة." };
+    }
+    return {
+      scope: "administration",
+      region: String(admin.region),
+      administration: String(admin._id),
+    };
   }
 
   if (session.role === "region") {
