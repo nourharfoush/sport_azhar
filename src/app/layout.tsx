@@ -21,6 +21,41 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ar" dir="rtl" className={cairo.variable} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                var ATTRS = ['bis_skin_checked', 'bis_register', '__processed_'];
+                function clean(node) {
+                  if (!node || node.nodeType !== 1) return;
+                  for (var i = 0; i < node.attributes.length; i++) {
+                    var attr = node.attributes[i];
+                    if (attr && (ATTRS.indexOf(attr.name) !== -1 || attr.name.indexOf('bis_') === 0)) {
+                      node.removeAttribute(attr.name);
+                      i--;
+                    }
+                  }
+                  for (var c = node.firstElementChild; c; c = c.nextElementSibling) {
+                    clean(c);
+                  }
+                }
+                clean(document.documentElement);
+                var obs = new MutationObserver(function(mutations) {
+                  for (var i = 0; i < mutations.length; i++) {
+                    var m = mutations[i];
+                    if (m.type === 'attributes' && m.attributeName && m.attributeName.indexOf('bis_') === 0) {
+                      m.target.removeAttribute(m.attributeName);
+                    }
+                  }
+                });
+                obs.observe(document.documentElement, { attributes: true, subtree: true });
+                setTimeout(function() { obs.disconnect(); }, 4000);
+              })();
+            `,
+          }}
+        />
+      </head>
       <body
         className="font-[family-name:var(--font-cairo)] min-h-screen bg-slate-50 text-slate-900 antialiased"
         suppressHydrationWarning
@@ -30,4 +65,5 @@ export default function RootLayout({
     </html>
   );
 }
+
 
