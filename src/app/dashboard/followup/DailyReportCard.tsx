@@ -20,6 +20,7 @@ export interface VisitRow {
   _id: string;
   date: string; // ISO
   visitType: VisitType;
+  supervisorId: string;
   supervisorName: string;
   instituteName: string;
   administrationName: string;
@@ -61,7 +62,6 @@ export function DailyReportCard({
   const [editing, setEditing] = useState(false);
   const { weekday, date } = fmtDate(visit.date);
   const locked = visit.reportStatus === "submitted";
-
   const [saveState, saveAction, saving] = useActionState(saveDailyReportAction, {
     success: false,
   });
@@ -96,7 +96,7 @@ export function DailyReportCard({
           <p className="text-xs text-slate-500 mt-1">
             {weekday} — {date} • {visit.administrationName} • {visit.regionName}
           </p>
-          {isSupervisor && (
+          {!isSupervisor && (
             <p className="text-xs text-slate-500 mt-1">الموجّه: {visit.supervisorName}</p>
           )}
         </div>

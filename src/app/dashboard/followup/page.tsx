@@ -24,7 +24,6 @@ export default async function FollowUpPage() {
 
   const month = currentMonth();
   const isPlanManager = session.role === "general" || session.role === "region" || session.role === "administration";
-  const isSupervisor = session.role === "institute" || supervisedRolesFor(session).length === 0;
 
   // ── 1. الموجّهون ضمن نطاق المدير (لبناء الخطة) ──
   let supervisorOptions: Array<{
@@ -126,6 +125,7 @@ export default async function FollowUpPage() {
       _id: String(v._id),
       date: new Date(v.date).toISOString(),
       visitType: v.visitType as VisitType,
+      supervisorId: String(v.supervisor),
       supervisorName: refName(v.supervisor) ?? "—",
       instituteName: refName(v.institute) ?? "—",
       administrationName: refName(v.administration) ?? "—",
@@ -198,7 +198,7 @@ export default async function FollowUpPage() {
               <DailyReportCard
                 key={v._id}
                 visit={v}
-                isSupervisor={isSupervisor}
+                isSupervisor={v.supervisorId === session.id}
                 canManage={isPlanManager}
               />
             ))}
