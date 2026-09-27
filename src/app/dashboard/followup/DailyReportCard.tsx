@@ -3,15 +3,16 @@
 import { useActionState, useState } from "react";
 import {
   saveDailyReportAction,
-  submitDailyReportAction,
   updateVisitAction,
   deleteVisitAction,
 } from "./planActions";
+import { ReportFormFields } from "./ReportForm";
 import {
   DAILY_REPORT_STATUS_LABELS,
   VISIT_TYPES,
   VISIT_TYPE_LABELS,
   WEEKDAY_LABELS,
+  type DailyReportBody,
   type DailyReportStatus,
   type VisitType,
 } from "@/types";
@@ -23,11 +24,11 @@ export interface VisitRow {
   supervisorId: string;
   supervisorName: string;
   instituteName: string;
+  instituteType: string;
   administrationName: string;
   regionName: string;
   reportStatus: DailyReportStatus;
-  summary: string;
-  recommendations: string;
+  body: DailyReportBody;
 }
 
 function fmtDate(iso: string): { weekday: string; date: string } {
@@ -48,6 +49,66 @@ function fmtDate(iso: string): { weekday: string; date: string } {
  * - الموجّه: يفتح التقرير ويملؤه ثم يرسله.
  * - المدير: يعرض حالة التقرير فقط.
  */
+/** هل محتوى التقرير يحتوي أي قيمة؟ (لإخفاء الملخّص الفارغ) */
+function hasAnyBody(b: DailyReportBody | undefined): boolean {
+  if (!b) return false;
+  return Object.values(b).some(
+    (v) => v !== undefined && v !== null && v !== "",
+  );
+}
+
+/** عرض التقرير المُرسل للمدير (قراءة فقط). */
+function ReportSummary({ body }: { body: DailyReportBody }) {
+  const b = body ?? {};
+  const row = (k: string, v: unknown) =>
+    v === undefined || v === null || v === "" ? null : (
+      <div key={k} className="flex gap-2 text-xs">
+        <span className="font-semibold text-slate-600 shrink-0">{k}:</span>
+        <span className="text-slate-800">{String(v)}</span>
+      </div>
+    );
+
+  const yesNo = (v?: string) => (v === "yes" ? "نعم" : v === "no" ? "لا" : undefined);
+  const ex = (v?: string) => (v === "present" ? "موجود" : v === "absent" ? "غير موجود" : undefined);
+  const comp = (v?: string) => (v === "complete" ? "مكتمل" : v === "incomplete" ? "غير مكتمل" : undefined);
+  const att = (v?: string) => (v === "present" ? "حاضر" : v === "absent" ? "غائب" : undefined);
+  const exec = (v?: string) =>
+    v === "full" ? "تم تنفيذ الخطة" : v === "partial" ? "تم تنفيذ جزء منها" : v === "none" ? "لم تنفذ" : undefined;
+
+  const parts = [
+    row("عدد الطلاب", b.studentCount),
+    b.boysCount !== undefined || b.girlsCount !== undefined
+      ? row("بنين/بنات", `${b.boysCount ?? 0} / ${b.girlsCount ?? 0}`)
+      : null,
+    row("معلّم التربية الرياضية", att(b.peTeacherPresent)),
+    row("منتدب لمعهد آخر", yesNo(b.seconded)),
+    b.seconded === "yes" ? row("اسم المعهد الآخر", b.secondedInstituteName) : null,
+    row("عدد الحصص", b.peLessonsCount),
+    row("الالتزام بالزي", yesNo(b.uniformCompliant)),
+    row("الكشكول", ex(b.recordBook)),
+    b.recordBook === "present" ? row("حالة الكشكول", comp(b.recordBookCompleteness)) : null,
+    row("السجلان", ex(b.records)),
+    b.records === "present" ? row("حالة السجلين", comp(b.recordsCompleteness)) : null,
+    b.recordsCompleteness === "incomplete" ? row("السجلات الناقصة", b.missingRecordsNames) : null,
+    row("الخطة المالية", ex(b.financialPlan)),
+    b.financialPlan === "absent" ? row("سبب عدم وجود الخطة", b.financialPlanAbsentReason) : null,
+    b.financialPlan === "present" ? row("مدى التنفيذ", exec(b.financialPlanExecution)) : null,
+    row("الإيجابيات", b.positives),
+    row("السلبيات", b.negatives),
+    row("المقترحات", b.suggestions),
+    row("ملاحظات عامة", b.generalNotes),
+  ].filter(Boolean);
+
+  return (
+    <div className="mt-4 pt-4 border-t border-slate-100">
+      <p className="text-xs font-bold text-slate-700 mb-2">بيانات التقرير</p>
+      <div className="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
+        {parts}
+      </div>
+    </div>
+  );
+}
+
 export function DailyReportCard({
   visit,
   isSupervisor,
@@ -65,10 +126,6 @@ export function DailyReportCard({
   const [saveState, saveAction, saving] = useActionState(saveDailyReportAction, {
     success: false,
   });
-  const [submitState, submitAction, submitting] = useActionState(
-    submitDailyReportAction,
-    { success: false },
-  );
   const [updateState, updateAction, updating] = useActionState(updateVisitAction, {
     success: false,
   });
@@ -183,75 +240,49 @@ export function DailyReportCard({
         </div>
       )}
 
-      {(visit.summary || visit.recommendations) && (
-        <div className="mt-4 pt-4 border-t border-slate-100 space-y-2 text-xs">
-          {visit.summary && (
-            <p className="text-slate-700">
-              <span className="font-bold">الخلاصة: </span>
-              {visit.summary}
-            </p>
-          )}
-          {visit.recommendations && (
-            <p className="text-slate-700">
-              <span className="font-bold">التوصيات: </span>
-              {visit.recommendations}
-            </p>
-          )}
-        </div>
+      {(locked || (isSupervisor && !open)) && hasAnyBody(visit.body) && (
+        <ReportSummary body={visit.body} />
       )}
 
 
       {isSupervisor && open && !locked && (
         <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
-          <p className="text-[11px] text-slate-500 leading-relaxed">
-            حقول التقرير التفصيلية ستُضاف لاحقًا. المخصّصات المتاحة الآن: الخلاصة والتوصيات.
-          </p>
-
           <form action={saveAction} className="space-y-3">
             <input type="hidden" name="visitId" value={visit._id} />
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">الخلاصة</label>
-              <textarea
-                name="summary"
-                defaultValue={visit.summary}
-                rows={3}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">التوصيات</label>
-              <textarea
-                name="recommendations"
-                defaultValue={visit.recommendations}
-                rows={2}
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm"
-              />
-            </div>
-            {saveState?.error && <p className="text-xs text-rose-700">{saveState.error}</p>}
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition"
-            >
-              {saving ? "جارٍ الحفظ..." : "حفظ كمسودة"}
-            </button>
-          </form>
+            <ReportFormFields
+              instituteName={visit.instituteName}
+              instituteType={visit.instituteType}
+              body={visit.body ?? {}}
+            />
 
-          <form action={submitAction}>
-            <input type="hidden" name="visitId" value={visit._id} />
-            {submitState?.error && (
-              <p className="text-xs text-rose-700 mb-2">{submitState.error}</p>
-            )}
-            <button
-              type="submit"
-              disabled={submitting}
-              className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition"
-            >
-              {submitting ? "جارٍ الإرسال..." : "إرسال التقرير"}
-            </button>
+            {saveState?.error && <p className="text-xs text-rose-700">{saveState.error}</p>}
+
+            <div className="flex flex-wrap gap-2 pt-2">
+              <button
+                type="submit"
+                name="intent"
+                value="submitted"
+                disabled={saving}
+                className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition"
+              >
+                {saving ? "جارٍ الإرسال..." : "إرسال التقرير"}
+              </button>
+              <button
+                type="submit"
+                name="intent"
+                value="draft"
+                disabled={saving}
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition"
+              >
+                حفظ كمسودة
+              </button>
+            </div>
           </form>
         </div>
       )}
     </div>
   );
 }
+
+
+

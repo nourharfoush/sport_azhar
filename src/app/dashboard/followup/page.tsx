@@ -9,7 +9,7 @@ import { Institute } from "@/models/Institute";
 import { MonthlyPlanBuilder } from "./MonthlyPlanBuilder";
 import { DailyReportCard, type VisitRow } from "./DailyReportCard";
 import { supervisedRolesFor } from "./planScope";
-import { MONTH_LABELS, type DailyReportStatus, type VisitType } from "@/types";
+import { MONTH_LABELS, type DailyReportBody, type DailyReportStatus, type VisitType } from "@/types";
 import { refId, refName } from "@/lib/data";
 
 /** الشهر الحالي بصيغة YYYY-MM. */
@@ -109,7 +109,7 @@ export default async function FollowUpPage() {
 
   const visits = await MonthlyVisit.find(visitFilter)
     .populate("supervisor", "name")
-    .populate("institute", "name")
+    .populate("institute", "name type stage")
     .populate("administration", "name")
     .populate("region", "name")
     .sort({ date: 1 })
@@ -129,11 +129,14 @@ export default async function FollowUpPage() {
       supervisorId: refId(v.supervisor) ?? "",
       supervisorName: refName(v.supervisor) ?? "—",
       instituteName: refName(v.institute) ?? "—",
+      instituteType:
+        (typeof v.institute === "object"
+          ? (v.institute as { type?: string } | null)?.type
+          : undefined) || "مشترك",
       administrationName: refName(v.administration) ?? "—",
       regionName: refName(v.region) ?? "—",
-      reportStatus: ((r?.status as DailyReportStatus | undefined) ?? "pending"),
-      summary: r?.summary ?? "",
-      recommendations: r?.recommendations ?? "",
+      reportStatus: (r?.status as DailyReportStatus | undefined) ?? "pending",
+      body: (r?.body as DailyReportBody | undefined) ?? {},
     };
   });
 
@@ -209,5 +212,6 @@ export default async function FollowUpPage() {
     </div>
   );
 }
+
 
 

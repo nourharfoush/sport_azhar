@@ -12,6 +12,100 @@ import { MonthlyVisit } from "@/models/MonthlyVisit";
 import { DailyReport } from "@/models/DailyReport";
 import { VISIT_TYPES, type SessionUser, type VisitType } from "@/types";
 import { isPlanManager, supervisedRolesFor } from "./planScope";
+import {
+  ATTENDANCE,
+  COMPLETENESS,
+  EXISTENCE,
+  PLAN_EXECUTION,
+  YES_NO,
+  type DailyReportBody,
+} from "@/types";
+
+/**
+ * يقرأ نموذج التقرير إلى كائن DailyReportBody.
+ * الحقول الشرطية تُحفظ فقط عندما يتحقق شرطها،
+ * فلا تتراكم قيم قديمة بعد تغيير الاختيار.
+ */
+function parseReportBody(formData: FormData): DailyReportBody {
+  const num = (k: string): number | undefined => {
+    const raw = String(formData.get(k) ?? "").trim();
+    if (raw === "") return undefined;
+    const n = Number(raw);
+    return Number.isFinite(n) && n >= 0 ? n : undefined;
+  };
+  const str = (k: string): string | undefined => {
+    const raw = String(formData.get(k) ?? "").trim();
+    return raw === "" ? undefined : raw;
+  };
+  const oneOf = <T extends string>(k: string, allowed: readonly T[]): T | undefined => {
+    const raw = String(formData.get(k) ?? "").trim() as T;
+    return allowed.includes(raw) ? raw : undefined;
+  };
+
+  const body: DailyReportBody = {};
+
+  const studentCount = num("studentCount");
+  if (studentCount !== undefined) body.studentCount = studentCount;
+  const boysCount = num("boysCount");
+  if (boysCount !== undefined) body.boysCount = boysCount;
+  const girlsCount = num("girlsCount");
+  if (girlsCount !== undefined) body.girlsCount = girlsCount;
+
+  const peTeacherPresent = oneOf("peTeacherPresent", ATTENDANCE);
+  if (peTeacherPresent) body.peTeacherPresent = peTeacherPresent;
+
+  const seconded = oneOf("seconded", YES_NO);
+  if (seconded) body.seconded = seconded;
+  if (seconded === "yes") {
+    const nm = str("secondedInstituteName");
+    if (nm) body.secondedInstituteName = nm;
+  }
+
+  const peLessonsCount = num("peLessonsCount");
+  if (peLessonsCount !== undefined) body.peLessonsCount = peLessonsCount;
+
+  const uniformCompliant = oneOf("uniformCompliant", YES_NO);
+  if (uniformCompliant) body.uniformCompliant = uniformCompliant;
+
+  const recordBook = oneOf("recordBook", EXISTENCE);
+  if (recordBook) body.recordBook = recordBook;
+  if (recordBook === "present") {
+    const c = oneOf("recordBookCompleteness", COMPLETENESS);
+    if (c) body.recordBookCompleteness = c;
+  }
+
+  const records = oneOf("records", EXISTENCE);
+  if (records) body.records = records;
+  if (records === "present") {
+    const c = oneOf("recordsCompleteness", COMPLETENESS);
+    if (c) body.recordsCompleteness = c;
+    if (c === "incomplete") {
+      const names = str("missingRecordsNames");
+      if (names) body.missingRecordsNames = names;
+    }
+  }
+
+  const financialPlan = oneOf("financialPlan", EXISTENCE);
+  if (financialPlan) body.financialPlan = financialPlan;
+  if (financialPlan === "absent") {
+    const reason = str("financialPlanAbsentReason");
+    if (reason) body.financialPlanAbsentReason = reason;
+  } else if (financialPlan === "present") {
+    const ex = oneOf("financialPlanExecution", PLAN_EXECUTION);
+    if (ex) body.financialPlanExecution = ex;
+  }
+
+  const positives = str("positives");
+  if (positives) body.positives = positives;
+  const negatives = str("negatives");
+  if (negatives) body.negatives = negatives;
+  const suggestions = str("suggestions");
+  if (suggestions) body.suggestions = suggestions;
+  const generalNotes = str("generalNotes");
+  if (generalNotes) body.generalNotes = generalNotes;
+
+  return body;
+}
 
 type PlanActionResult = { success: boolean; error?: string };
 
@@ -276,15 +370,17 @@ export async function saveDailyReportAction(
     return { success: false, error: "هذا الموعد يخصّ موجّهًا آخر." };
   }
 
+  const isSubmit = fd(formData, "intent") === "submitted";
+
   await DailyReport.findOneAndUpdate(
     { visit: visitId },
     {
       $set: {
         month: visit.month,
         supervisor: visit.supervisor,
-        summary: fd(formData, "summary"),
-        recommendations: fd(formData, "recommendations"),
-        status: "draft",
+        body: parseReportBody(formData),
+        status: isSubmit ? "submitted" : "draft",
+        ...(isSubmit ? { submittedAt: new Date() } : {}),
       },
     },
     { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
@@ -293,45 +389,4 @@ export async function saveDailyReportAction(
   revalidatePath("/dashboard/followup");
   return { success: true };
 }
-
-/** إرسال التقرير اليومي (يقفله في وضع «مُرسل»). */
-export async function submitDailyReportAction(
-  prevState: PlanActionResult,
-  formData: FormData,
-): Promise<PlanActionResult> {
-  const session = await getSession();
-  if (!session) return { success: false, error: "غير مصرح." };
-
-  const visitId = fd(formData, "visitId");
-  if (!visitId) return { success: false, error: "الموعد غير محدد." };
-
-  await dbConnect();
-  const visit = await MonthlyVisit.findById(visitId);
-  if (!visit) return { success: false, error: "الموعد غير موجود." };
-  if (session.role === "institute") {
-    return { success: false, error: "التقرير يرسله الموجّه فقط." };
-  }
-  if (String(visit.supervisor) !== session.id) {
-    return { success: false, error: "هذا الموعد يخصّ موجّهًا آخر." };
-  }
-
-  await DailyReport.findOneAndUpdate(
-    { visit: visitId },
-    {
-      $set: {
-        month: visit.month,
-        supervisor: visit.supervisor,
-        status: "submitted",
-        submittedAt: new Date(),
-      },
-    },
-    { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
-  );
-
-  revalidatePath("/dashboard/followup");
-  return { success: true };
-}
-
-
-
 

@@ -143,6 +143,82 @@ export const INSTITUTE_TYPES = ["بنين", "فتيات", "مشترك"] as const
 export type InstituteType = (typeof INSTITUTE_TYPES)[number];
 
 /** أسماء أيام الأسبوع بالعربية لعرض «اليوم» في الموعد. */
+
+/** نعم/لا في تقارير المتابعة. */
+export const YES_NO = ["yes", "no"] as const;
+export type YesNo = (typeof YES_NO)[number];
+export const YES_NO_LABELS: Record<YesNo, string> = { yes: "نعم", no: "لا" };
+
+/** حضور/غياب معلم التربية الرياضية. */
+export const ATTENDANCE = ["present", "absent"] as const;
+export type Attendance = (typeof ATTENDANCE)[number];
+export const ATTENDANCE_LABELS: Record<Attendance, string> = {
+  present: "حاضر",
+  absent: "غائب",
+};
+
+/** حالة وجود سجل أو كشكول: موجود أم غير موجود. */
+export const EXISTENCE = ["present", "absent"] as const;
+export type Existence = (typeof EXISTENCE)[number];
+export const EXISTENCE_LABELS: Record<Existence, string> = {
+  present: "موجود",
+  absent: "غير موجود",
+};
+
+/** اكتمال السجل/الكشكول. */
+export const COMPLETENESS = ["complete", "incomplete"] as const;
+export type Completeness = (typeof COMPLETENESS)[number];
+export const COMPLETENESS_LABELS: Record<Completeness, string> = {
+  complete: "مكتمل",
+  incomplete: "غير مكتمل",
+};
+
+/** مدى تنفيذ الخطة المالية. */
+export const PLAN_EXECUTION = ["full", "partial", "none"] as const;
+export type PlanExecution = (typeof PLAN_EXECUTION)[number];
+export const PLAN_EXECUTION_LABELS: Record<PlanExecution, string> = {
+  full: "تم تنفيذ الخطة",
+  partial: "تم تنفيذ جزء منها",
+  none: "لم تنفذ",
+};
+
+/**
+ * محتوى تقرير المتابعة اليومي.
+ * يُخزَّن في DailyReport.body (Mixed) — يمكن إضافة حقول دون تعديل المخطط.
+ */
+export interface DailyReportBody {
+  // 1) عدد الطلاب (يكتبه الموجّه)
+  studentCount?: number;
+  /** عدد البنات — يُطلب فقط إذا كان المعهد «مشترك». */
+  boysCount?: number;
+  girlsCount?: number;
+  // 2) معلم التربية الرياضية
+  peTeacherPresent?: Attendance;
+  // 3) الانتداب لمعهد آخر
+  seconded?: YesNo;
+  secondedInstituteName?: string;
+  // 4) عدد حصص التربية الرياضية
+  peLessonsCount?: number;
+  // 5) الالتزام بالزي الرياضي
+  uniformCompliant?: YesNo;
+  // 6) الكشكول
+  recordBook?: Existence;
+  recordBookCompleteness?: Completeness;
+  // 7) السجلان
+  records?: Existence;
+  recordsCompleteness?: Completeness;
+  missingRecordsNames?: string;
+  // 8) الخطة المالية
+  financialPlan?: Existence;
+  financialPlanAbsentReason?: string;
+  financialPlanExecution?: PlanExecution;
+  // 9..12) ملاحظات
+  positives?: string;
+  negatives?: string;
+  suggestions?: string;
+  generalNotes?: string;
+}
+
 export const WEEKDAY_LABELS = [
   "الأحد",
   "الاثنين",
