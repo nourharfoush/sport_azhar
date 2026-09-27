@@ -1,13 +1,14 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 import { dbConnect } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { Event } from "@/models/Event";
 import { FollowUp } from "@/models/FollowUp";
-import { ensureFollowUpsForEvent } from "@/lib/data";
+import { ensureFollowUpsForEvent, getScopedInstitutes } from "@/lib/data";
 import { canManageScopedItem } from "@/lib/rbac";
 import { Administration } from "@/models/Administration";
+import { Institute } from "@/models/Institute";
 import { SPORTS, FOLLOWUP_STATUSES, EVENT_STATUSES, type EventStatus, type FollowupStatus, type EventScope } from "@/types";
 
 /**
@@ -243,6 +244,7 @@ export async function deleteEventAction(formData: FormData): Promise<{ success: 
   }
 }
 
+
 /** تحديث متابعة/نتيجة معهد (يُحدّث المعهد معاهده فقط). */
 export async function updateFollowUpAction(formData: FormData): Promise<void> {
   const session = await getSession();
@@ -261,11 +263,12 @@ export async function updateFollowUpAction(formData: FormData): Promise<void> {
   const fu = await FollowUp.findById(id);
   if (!fu) return;
 
-  if (
-    session.role === "institute" &&
-    String(fu.institute) !== session.instituteId
-  ) {
-    return;
+  if (session.role === "institute") {
+    if (String(fu.institute) !== session.instituteId) return;
+  } else {
+    // الموجّه/المدير يعدّل ما يقع داخل نطاقه الإداري فقط
+    const scoped = await getScopedInstitutes(session);
+    if (!scoped.some((i) => String(i._id) === String(fu.institute))) return;
   }
 
   fu.status = status;

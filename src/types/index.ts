@@ -82,6 +82,62 @@ export const SPORTS = [
   "السباحة",
 ] as const;
 
+
+// ─────────────────────────────────────────────────────────────
+// الخطة الشهرية للموجّه + التقارير اليومية
+// ─────────────────────────────────────────────────────────────
+
+/** نوع الموعد اليومي في الخطة الشهرية. */
+export const VISIT_TYPES = [
+  "competition", // مسابقة
+  "supervisory", // زيارة توجيهيّة
+] as const;
+
+export type VisitType = (typeof VISIT_TYPES)[number];
+
+export const VISIT_TYPE_LABELS: Record<VisitType, string> = {
+  competition: "مسابقة",
+  supervisory: "زيارة توجيهيّة",
+};
+
+/** حالة التقرير اليومي المرتبط بموعد في الخطة. */
+export const DAILY_REPORT_STATUSES = ["pending", "draft", "submitted"] as const;
+
+export type DailyReportStatus = (typeof DAILY_REPORT_STATUSES)[number];
+
+export const DAILY_REPORT_STATUS_LABELS: Record<DailyReportStatus, string> = {
+  pending: "لم يُرسل بعد", // الموعد لم يُكتب تقريره
+  draft: "مسودة", // بدأ الموجّه الكتابة ولم يرسل
+  submitted: "مُرسل", // تقرير مكتمل مُرسل للإدارة
+};
+
+/** أسماء الشهور بالعربية (1-based) لعرض الخطة الشهرية. */
+export const MONTH_LABELS = [
+  "يناير",
+  "فبراير",
+  "مارس",
+  "أبريل",
+  "مايو",
+  "يونيو",
+  "يوليو",
+  "أغسطس",
+  "سبتمبر",
+  "أكتوبر",
+  "نوفمبر",
+  "ديسمبر",
+] as const;
+
+/** أسماء أيام الأسبوع بالعربية لعرض «اليوم» في الموعد. */
+export const WEEKDAY_LABELS = [
+  "الأحد",
+  "الاثنين",
+  "الثلاثاء",
+  "الأربعاء",
+  "الخميس",
+  "الجمعة",
+  "السبت",
+] as const;
+
 export type Sport = (typeof SPORTS)[number];
 
 export interface SessionUser {
