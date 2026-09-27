@@ -184,13 +184,17 @@ function ReportSheet({
           </tbody>
         </table>
 
-        <div className="grid grid-cols-2 gap-8 mt-8 print:mt-6 text-[11px]">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 print:gap-4 mt-10 print:mt-6 text-[11px]">
           <div className="text-center">
-            <p className="mb-8">الموجّه</p>
+            <p className="mb-9">معلم التربية الرياضية</p>
             <div className="border-t border-slate-400" />
           </div>
           <div className="text-center">
-            <p className="mb-8">مدير الإدارة التعليمية</p>
+            <p className="mb-9">الموجّه</p>
+            <div className="border-t border-slate-400" />
+          </div>
+          <div className="text-center">
+            <p className="mb-9">شيخ المعهد</p>
             <div className="border-t border-slate-400" />
           </div>
         </div>
