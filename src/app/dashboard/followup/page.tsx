@@ -8,6 +8,7 @@ import { Administration } from "@/models/Administration";
 import { Institute } from "@/models/Institute";
 import { MonthlyPlanBuilder } from "./MonthlyPlanBuilder";
 import { DailyReportCard, type VisitRow } from "./DailyReportCard";
+import { supervisedRolesFor } from "./planScope";
 import { MONTH_LABELS, type DailyReportStatus, type VisitType } from "@/types";
 import { refName } from "@/lib/data";
 
@@ -22,8 +23,8 @@ export default async function FollowUpPage() {
   await dbConnect();
 
   const month = currentMonth();
-  const isPlanManager = session.role === "region" || session.role === "administration";
-  const isSupervisor = isPlanManager;
+  const isPlanManager = session.role === "general" || session.role === "region" || session.role === "administration";
+  const isSupervisor = session.role === "institute" || supervisedRolesFor(session).length === 0;
 
   // ── 1. الموجّهون ضمن نطاق المدير (لبناء الخطة) ──
   let supervisorOptions: Array<{
@@ -58,8 +59,10 @@ export default async function FollowUpPage() {
     const regionName = new Map(regions.map((r) => [String(r._id), r.name]));
     const adminName = new Map(admins.map((a) => [String(a._id), a.name]));
 
+    // الموجّهون = المستويات التي يشرف عليها هذا المدير فقط
+    const supervisedRoles = supervisedRolesFor(session);
     const supervisors = await User.find({
-      role: { $in: ["region", "administration"] },
+      role: { $in: supervisedRoles },
       ...(session.role === "region" && session.regionId
         ? { region: session.regionId }
         : session.role === "administration" && session.administrationId
@@ -171,10 +174,23 @@ export default async function FollowUpPage() {
         </div>
 
         {rows.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500 text-sm">
-            {isPlanManager
-              ? "لا توجد مواعيد في خطة هذا الشهر بعد. ابدأ بإضافة موعد من النموذج أعلاه."
-              : "لا توجد مواعيد في خطتك لهذا الشهر. راجع موجه المنطقة أو الإدارة التعليمية."}
+          <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500 text-sm space-y-2">
+            <p className="font-semibold text-slate-700">
+              لا توجد مواعيد في خطة {monthTitle} بعد.
+            </p>
+            {isPlanManager ? (
+              <>
+                <p>ابدأ بإضافة موعد من نموذج «بناء خطة الشهر» أعلاه.</p>
+                {supervisorOptions.length === 0 && (
+                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 inline-block">
+                    لا يوجد مستخدمون ضمن المستويات التي تشرف عليها. أنشئ موجّهي
+                    الإدارات التعليمية (أو المناطق) من صفحة «إدارة المستخدمين والصلاحيات».
+                  </p>
+                )}
+              </>
+            ) : (
+              <p>لم يضع مديرك خطة لهذا الشهر بعد. راجع موجه المنطقة أو الإدارة التعليمية.</p>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
@@ -183,6 +199,7 @@ export default async function FollowUpPage() {
                 key={v._id}
                 visit={v}
                 isSupervisor={isSupervisor}
+                canManage={isPlanManager}
               />
             ))}
           </div>

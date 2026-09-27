@@ -10,14 +10,10 @@ import { Administration } from "@/models/Administration";
 import { Institute } from "@/models/Institute";
 import { MonthlyVisit } from "@/models/MonthlyVisit";
 import { DailyReport } from "@/models/DailyReport";
-import { VISIT_TYPES, type VisitType } from "@/types";
+import { VISIT_TYPES, type SessionUser, type VisitType } from "@/types";
+import { isPlanManager, supervisedRolesFor } from "./planScope";
 
 type PlanActionResult = { success: boolean; error?: string };
-
-/** المدير الذي يضع الخطة: المنطقة أو الإدارة التعليمية فقط. */
-function isPlanManager(role: string | undefined): boolean {
-  return role === "region" || role === "administration";
-}
 
 /** يقرأ قيمة حقل من FormData كسلسلة مقصوصة. */
 function fd(formData: FormData, key: string): string {
@@ -34,7 +30,7 @@ export async function saveMonthlyPlanAction(
 ): Promise<PlanActionResult> {
   const session = await getSession();
   if (!session || !isPlanManager(session.role)) {
-    return { success: false, error: "الخطة الشهرية يضعها موجه المنطقة أو الإدارة التعليمية فقط." };
+    return { success: false, error: "وضع الخطط من صلاحية الإدارة العامة والمنطقة والإدارة التعليمية فقط." };
   }
 
   const month = fd(formData, "month");
@@ -95,14 +91,19 @@ export async function saveMonthlyPlanAction(
       return { success: false, error: `المعهد في الموعد رقم ${idx + 1} خارج نطاقك.` };
     }
 
-    // الموجّه يجب أن يكون داخل نطاق المدير
+    // الموجّه: لازم يكون دوره من المستويات التي يشرف عليها هذا المدير
+    const supervisedRoles = supervisedRolesFor(session);
     const supervisor = await User.findOne({
       _id: supervisorId,
-      role: { $in: ["region", "administration"] },
+      role: { $in: supervisedRoles },
     }).lean();
     if (!supervisor) {
-      return { success: false, error: `الموجّه في الموعد رقم ${idx + 1} غير موجود أو ليس موجّهًا.` };
+      return {
+        success: false,
+        error: `الموجّه في الموعد رقم ${idx + 1} ليس ضمن المستويات التي تشرف عليها.`,
+      };
     }
+    // نطاق الموجّه يجب أن يقع داخل نطاق المدير
     const supRegion = supervisor.region ? String(supervisor.region) : null;
     const supAdmin = supervisor.administration ? String(supervisor.administration) : null;
     if (supRegion && !validRegionIds.has(supRegion)) {
@@ -158,6 +159,99 @@ export async function saveMonthlyPlanAction(
     return { success: false, error: "حدث خطأ أثناء حفظ الخطة." };
   }
 }
+
+/**
+ * التأكد أن هذا المدير يشرف على الموعد (للتعديل/الحذف).
+ * المنطقة تدير مواعيد الإدارات属下ارتها، والعامة تدير الجميع.
+ */
+async function canManageVisit(
+  session: SessionUser,
+  visit: { supervisor: unknown; region: unknown; administration: unknown },
+): Promise<boolean> {
+  if (!isPlanManager(session.role)) return false;
+  if (session.role === "general") return true;
+  if (session.role === "region") {
+    return String(visit.region ?? "") === String(session.regionId ?? "");
+  }
+  if (session.role === "administration") {
+    return String(visit.administration ?? "") === String(session.administrationId ?? "");
+  }
+  return false;
+}
+
+/** تعديل موعد في الخطة (الموجّه/المعهد/النوع/التاريخ). */
+export async function updateVisitAction(
+  prevState: PlanActionResult,
+  formData: FormData,
+): Promise<PlanActionResult> {
+  const session = await getSession();
+  if (!session || !isPlanManager(session.role)) {
+    return { success: false, error: "غير مصرح لك بتعديل الخطط." };
+  }
+
+  const id = fd(formData, "id");
+  if (!id) return { success: false, error: "الموعد غير محدد." };
+
+  const visitType = fd(formData, "visitType");
+  const dateRaw = fd(formData, "date");
+  if (!VISIT_TYPES.includes(visitType as VisitType)) {
+    return { success: false, error: "نوع الزيارة غير صالح." };
+  }
+  const date = new Date(dateRaw);
+  if (Number.isNaN(date.getTime())) {
+    return { success: false, error: "التاريخ غير صالح." };
+  }
+
+  await dbConnect();
+  const visit = await MonthlyVisit.findById(id);
+  if (!visit) return { success: false, error: "الموعد غير موجود." };
+  if (!(await canManageVisit(session, visit))) {
+    return { success: false, error: "هذا الموعد خارج نطاق صلاحياتك." };
+  }
+
+  // التعديل يجب أن يبقى داخل نفس شهر الخطة
+  const [y, m] = visit.month.split("-").map(Number);
+  if (date.getFullYear() !== y || date.getMonth() + 1 !== m) {
+    return { success: false, error: "التاريخ يجب أن يبقى داخل نفس شهر الخطة." };
+  }
+
+  visit.visitType = visitType as VisitType;
+  visit.date = date;
+  const notes = fd(formData, "notes");
+  if (notes) visit.notes = notes;
+  await visit.save();
+
+  revalidatePath("/dashboard/followup");
+  return { success: true };
+}
+
+/** حذف موعد من الخطة (ويحذف تقريره إن وُجد). */
+export async function deleteVisitAction(
+  prevState: PlanActionResult,
+  formData: FormData,
+): Promise<PlanActionResult> {
+  const session = await getSession();
+  if (!session || !isPlanManager(session.role)) {
+    return { success: false, error: "غير مصرح لك بحذف الخطط." };
+  }
+
+  const id = fd(formData, "id");
+  if (!id) return { success: false, error: "الموعد غير محدد." };
+
+  await dbConnect();
+  const visit = await MonthlyVisit.findById(id);
+  if (!visit) return { success: false, error: "الموعد غير موجود." };
+  if (!(await canManageVisit(session, visit))) {
+    return { success: false, error: "هذا الموعد خارج نطاق صلاحياتك." };
+  }
+
+  await DailyReport.deleteOne({ visit: id });
+  await visit.deleteOne();
+
+  revalidatePath("/dashboard/followup");
+  return { success: true };
+}
+
 
 /** حفظ/تحديث التقرير اليومي لموعد (مسودة). الموجّه يملؤه لنفسه. */
 export async function saveDailyReportAction(
@@ -237,3 +331,7 @@ export async function submitDailyReportAction(
   revalidatePath("/dashboard/followup");
   return { success: true };
 }
+
+
+
+

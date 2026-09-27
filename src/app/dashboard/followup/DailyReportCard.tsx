@@ -1,9 +1,15 @@
 ﻿"use client";
 
 import { useActionState, useState } from "react";
-import { saveDailyReportAction, submitDailyReportAction } from "./planActions";
+import {
+  saveDailyReportAction,
+  submitDailyReportAction,
+  updateVisitAction,
+  deleteVisitAction,
+} from "./planActions";
 import {
   DAILY_REPORT_STATUS_LABELS,
+  VISIT_TYPES,
   VISIT_TYPE_LABELS,
   WEEKDAY_LABELS,
   type DailyReportStatus,
@@ -44,11 +50,15 @@ function fmtDate(iso: string): { weekday: string; date: string } {
 export function DailyReportCard({
   visit,
   isSupervisor,
+  canManage,
 }: {
   visit: VisitRow;
   isSupervisor: boolean;
+  /** المدير الذي يحكم هذا الموعد يستطيع تعديله/حذفه. */
+  canManage: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
   const { weekday, date } = fmtDate(visit.date);
   const locked = visit.reportStatus === "submitted";
 
@@ -59,6 +69,12 @@ export function DailyReportCard({
     submitDailyReportAction,
     { success: false },
   );
+  const [updateState, updateAction, updating] = useActionState(updateVisitAction, {
+    success: false,
+  });
+  const [deleteState, deleteAction, deleting] = useActionState(deleteVisitAction, {
+    success: false,
+  });
 
   const statusClass =
     visit.reportStatus === "submitted"
@@ -98,8 +114,74 @@ export function DailyReportCard({
               {open ? "إغلاق" : "فتح التقرير"}
             </button>
           )}
+          {canManage && (
+            <button
+              type="button"
+              onClick={() => setEditing((v) => !v)}
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition"
+            >
+              {editing ? "إغلاق التعديل" : "تعديل الموعد"}
+            </button>
+          )}
         </div>
       </div>
+
+      {canManage && editing && (
+        <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
+          <form action={updateAction} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+            <input type="hidden" name="id" value={visit._id} />
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">نوع الزيارة</label>
+              <select
+                name="visitType"
+                defaultValue={visit.visitType}
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm bg-white"
+              >
+                {VISIT_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {VISIT_TYPE_LABELS[t]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">التاريخ</label>
+              <input
+                type="date"
+                name="date"
+                defaultValue={visit.date.slice(0, 10)}
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm bg-white"
+              />
+            </div>
+            <div className="flex items-end">
+              <button
+                type="submit"
+                disabled={updating}
+                className="w-full px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white text-xs font-semibold rounded-xl transition"
+              >
+                {updating ? "جارٍ الحفظ..." : "حفظ التعديل"}
+              </button>
+            </div>
+            {updateState?.error && (
+              <p className="md:col-span-3 text-xs text-rose-700">{updateState.error}</p>
+            )}
+          </form>
+
+          <form action={deleteAction} className="pt-2">
+            <input type="hidden" name="id" value={visit._id} />
+            {deleteState?.error && (
+              <p className="text-xs text-rose-700 mb-2">{deleteState.error}</p>
+            )}
+            <button
+              type="submit"
+              disabled={deleting}
+              className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold rounded-lg transition"
+            >
+              {deleting ? "جارٍ الحذف..." : "حذف الموعد من الخطة"}
+            </button>
+          </form>
+        </div>
+      )}
 
       {(visit.summary || visit.recommendations) && (
         <div className="mt-4 pt-4 border-t border-slate-100 space-y-2 text-xs">
