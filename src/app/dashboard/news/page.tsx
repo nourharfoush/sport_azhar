@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { getVisibleNews, refId, refName } from "@/lib/data";
 import { canManageNews } from "@/lib/rbac";
+import { storageModeLabel } from "@/lib/upload";
 import { NewsList } from "./NewsList";
 
 export default async function NewsPage() {
@@ -36,6 +37,9 @@ export default async function NewsPage() {
         <p className="text-sm text-slate-500 mt-1">
           نشر الأخبار والقرارات ونتائج البطولات ومتابعتها في النطاق الإداري المخصص
           لكل مستوى.
+        </p>
+        <p className="text-[11px] text-slate-400 mt-2">
+          💾 {storageModeLabel()}
         </p>
       </div>
 

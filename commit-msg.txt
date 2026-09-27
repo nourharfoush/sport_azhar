@@ -1,0 +1,6 @@
+feat: support Vercel Blob storage for news images
+
+- store news images in Vercel Blob when BLOB_READ_WRITE_TOKEN is set, else fall back to local public/uploads
+- handle read-only server filesystem gracefully with a clear Arabic error message instead of crashing
+- accept Vercel Blob URLs in stored image paths, validate them, and delete them from the blob store
+- show the active storage mode on the news page and add @vercel/blob dependency
