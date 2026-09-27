@@ -6,6 +6,8 @@ import { Institute } from "../models/Institute";
 import { User } from "../models/User";
 import { Event } from "../models/Event";
 import { FollowUp } from "../models/FollowUp";
+import regionsData from "./regions-data.json";
+
 
 const MONGODB_URI =
   process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017/azhar_sports";
@@ -63,17 +65,63 @@ async function run() {
   const createdRegions = await Region.insertMany(EGYPT_REGIONS);
   const cairo = createdRegions.find((r) => r.code === "CAI")!;
 
-  // 2. الإدارات
-  const nasrAdmin = await Administration.create({
-    name: "إدارة مدينة نصر التعليمية",
-    code: "NSR",
-    region: cairo._id,
-  });
-  const heliAdmin = await Administration.create({
-    name: "إدارة مصر الجديدة التعليمية",
-    code: "HLP",
-    region: cairo._id,
-  });
+  // 2. إدخال كافة الإدارات التعليمية التابعة لكل منطقة أزهرية
+  console.log("إدخال جميع الإدارات التعليمية للمناطق الأزهرية...");
+  const norm = (s: string) =>
+    s
+      .replace(/[\u064B-\u065F]/g, "")
+      .replace(/[أإآ]/g, "ا")
+      .replace(/ة/g, "ه")
+      .replace(/ى/g, "ي")
+      .trim();
+
+  const allAdminDocs: Array<{ name: string; code: string; region: any }> = [];
+
+  for (const [rawRegionName, adminNames] of Object.entries(regionsData)) {
+    const regionDoc = createdRegions.find((r) => {
+      const dNorm = norm(r.name).replace("منطقه ", "").replace(" الازهريه", "");
+      const mNorm = norm(rawRegionName);
+      return dNorm === mNorm || norm(r.name).includes(mNorm);
+    });
+
+    if (!regionDoc) continue;
+
+    (adminNames as string[]).forEach((adminName, idx) => {
+      allAdminDocs.push({
+        name: adminName.startsWith("إدارة")
+          ? adminName
+          : `إدارة ${adminName} التعليمية`,
+        code: `${regionDoc.code}-ADM-${String(idx + 1).padStart(2, "0")}`,
+        region: regionDoc._id,
+      });
+    });
+  }
+
+  // إضافة إدارات تجريبية كإدارة مدينة نصر ومصر الجديدة إذا لم تكن موجودة بالقائمة لضمان التوافق مع المعاهد التجريبية
+  let nasrAdminDoc = allAdminDocs.find((a) => a.name.includes("مدينة نصر"));
+  if (!nasrAdminDoc) {
+    nasrAdminDoc = {
+      name: "إدارة مدينة نصر التعليمية",
+      code: "CAI-ADM-99",
+      region: cairo._id,
+    };
+    allAdminDocs.push(nasrAdminDoc);
+  }
+
+  let heliAdminDoc = allAdminDocs.find((a) => a.name.includes("مصر الجديدة"));
+  if (!heliAdminDoc) {
+    heliAdminDoc = {
+      name: "إدارة مصر الجديدة التعليمية",
+      code: "CAI-ADM-98",
+      region: cairo._id,
+    };
+    allAdminDocs.push(heliAdminDoc);
+  }
+
+  const createdAdmins = await Administration.insertMany(allAdminDocs);
+  const nasrAdmin = createdAdmins.find((a) => a.code === nasrAdminDoc!.code)!;
+  const heliAdmin = createdAdmins.find((a) => a.code === heliAdminDoc!.code)!;
+  console.log(`✓ تم إدخال ${createdAdmins.length} إدارة تعليمية بنجاح!`);
 
   // 3. المعاهد
   const inst1 = await Institute.create({
