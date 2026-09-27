@@ -10,6 +10,38 @@ import { FollowUp } from "../models/FollowUp";
 const MONGODB_URI =
   process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017/azhar_sports";
 
+// الـ 27 محافظة مصرية والمناطق الأزهرية الرسمية المقابلة لها
+const EGYPT_REGIONS = [
+  { name: "منطقة القاهرة الأزهرية", code: "CAI" },
+  { name: "منطقة الجيزة الأزهرية", code: "GIZ" },
+  { name: "منطقة الإسكندرية الأزهرية", code: "ALX" },
+  { name: "منطقة القليوبية الأزهرية", code: "QLY" },
+  { name: "منطقة الدقهلية الأزهرية", code: "DKH" },
+  { name: "منطقة الشرقية الأزهرية", code: "SHR" },
+  { name: "منطقة الغربية الأزهرية", code: "GHR" },
+  { name: "منطقة المنوفية الأزهرية", code: "MNF" },
+  { name: "منطقة البحيرة الأزهرية", code: "BEH" },
+  { name: "منطقة كفر الشيخ الأزهرية", code: "KFS" },
+  { name: "منطقة دمياط الأزهرية", code: "DOM" },
+  { name: "منطقة بورسعيد الأزهرية", code: "PSD" },
+  { name: "منطقة الإسماعيلية الأزهرية", code: "ISM" },
+  { name: "منطقة السويس الأزهرية", code: "SUZ" },
+  { name: "منطقة شمال سيناء الأزهرية", code: "SIN" },
+  { name: "منطقة جنوب سيناء الأزهرية", code: "SIS" },
+  { name: "منطقة البحر الأحمر الأزهرية", code: "RED" },
+  { name: "منطقة مطروح الأزهرية", code: "MAT" },
+  { name: "منطقة الوادي الجديد الأزهرية", code: "WAD" },
+  { name: "منطقة الفيوم الأزهرية", code: "FYM" },
+  { name: "منطقة بني سويف الأزهرية", code: "BSU" },
+  { name: "منطقة المنيا الأزهرية", code: "MNY" },
+  { name: "منطقة أسيوط الأزهرية", code: "ASY" },
+  { name: "منطقة سوهاج الأزهرية", code: "SOH" },
+  { name: "منطقة قنا الأزهرية", code: "QNA" },
+  { name: "منطقة الأقصر الأزهرية", code: "LUX" },
+  { name: "منطقة أسوان الأزهرية", code: "ASW" },
+];
+
+
 async function run() {
   console.log("الاتصال بقاعدة البيانات...");
   await mongoose.connect(MONGODB_URI);
@@ -26,15 +58,10 @@ async function run() {
 
   const passwordHash = await bcrypt.hash("azhar123", 10);
 
-  // 1. المناطق
-  const cairo = await Region.create({
-    name: "منطقة القاهرة الأزهرية",
-    code: "CAI",
-  });
-  const alex = await Region.create({
-    name: "منطقة الإسكندرية الأزهرية",
-    code: "ALX",
-  });
+  // 1. إنشاء كافة المناطق الأزهرية لجميع محافظات جمهورية مصر العربية (27 منطقة)
+  console.log("إدخال مناطق المحافظات المصرية الـ 27...");
+  const createdRegions = await Region.insertMany(EGYPT_REGIONS);
+  const cairo = createdRegions.find((r) => r.code === "CAI")!;
 
   // 2. الإدارات
   const nasrAdmin = await Administration.create({
