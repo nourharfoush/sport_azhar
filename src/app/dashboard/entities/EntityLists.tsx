@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useCallback, useState, useMemo } from "react";
 import type { RegionItem, AdministrationItem, InstituteItem } from "./types";
 import { RegionModals } from "./RegionModals";
 import { AdminModals } from "./AdminModals";
@@ -49,6 +49,13 @@ export function EntityLists({
     type: "createInstitute" | "editInstitute" | "deleteInstitute" | null;
     data?: any;
   }>({ type: null });
+
+  const closeRegionModal = useCallback(() => setRegionModal({ type: null }), []);
+  const closeAdminModal = useCallback(() => setAdminModal({ type: null }), []);
+  const closeInstituteModal = useCallback(
+    () => setInstituteModal({ type: null }),
+    [],
+  );
 
   const administrationsCountMap = useMemo(() => {
     const map: Record<string, number> = {};
@@ -314,7 +321,7 @@ export function EntityLists({
 
       <RegionModals
         modalState={regionModal}
-        onClose={() => setRegionModal({ type: null })}
+        onClose={closeRegionModal}
       />
 
       <AdminModals
@@ -322,7 +329,7 @@ export function EntityLists({
         userRegionId={userRegionId || undefined}
         regions={regions}
         modalState={adminModal}
-        onClose={() => setAdminModal({ type: null })}
+        onClose={closeAdminModal}
       />
 
       <InstituteModals
@@ -332,7 +339,7 @@ export function EntityLists({
         regions={regions}
         administrations={administrations}
         modalState={instituteModal}
-        onClose={() => setInstituteModal({ type: null })}
+        onClose={closeInstituteModal}
       />
     </div>
   );

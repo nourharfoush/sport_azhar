@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useRef } from "react";
 
 interface ActionModalProps {
   isOpen: boolean;
@@ -23,8 +23,13 @@ export function ActionModal({
 }: ActionModalProps) {
   const [state, formAction, isPending] = useActionState(action, { success: false });
 
+  // نحتفظ بآخر حالة تمت معالجتها حتى لا يُعاد استدعاء onClose
+  // في حلقة تحديث لا نهائية (onClose دالة جديدة في كل render).
+  const handledStateRef = useRef<any>(null);
+
   useEffect(() => {
-    if (state?.success) {
+    if (state?.success && handledStateRef.current !== state) {
+      handledStateRef.current = state;
       onClose();
     }
   }, [state, onClose]);
