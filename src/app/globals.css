@@ -28,6 +28,31 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* ══ حقول الإدخال والقوائم المنسدلة ══
+   خط أكبر وأعرض في كل القوائم، وOptions ترث الخط من الـselect. */
+input,
+select,
+textarea {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+select {
+  padding-block: 0.625rem;
+  min-height: 2.75rem;
+}
+
+select option {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+input::placeholder,
+textarea::placeholder {
+  font-weight: 500;
+}
+
 /* ══ تطبيق الوضع الليلي ══
    المشروع يستخدم أصناف Tailwind ثابتة (bg-white / text-slate-900 ...)،
    لذلك نُعيد تعيينها داخل .dark بدل تعديل كل مكوّن يدوياً. */
