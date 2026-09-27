@@ -1,4 +1,4 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+ï»¿# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
 /node_modules
@@ -48,7 +48,8 @@ next-env.d.ts
 
 # Ø¨ÙŠØ§Ù†Ø§Øª Ø¯Ø®ÙˆÙ„ Ø­Ø³Ø§Ø¨Ø§Øª Ø§Ù„Ù…Ù†Ø§Ø·Ù‚ (Ø­Ø³Ø§Ø³Ø© - Ù„Ø§ ØªÙØ±ÙØ¹ Ø¹Ù„Ù‰ Git)
 /src/scripts/region-credentials.txt
+/src/scripts/administration-credentials.txt
 
-# ÓÌáÇÊ ÎÇÏã ÇáÊØæíÑ ÇáãÍáí
+# ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 /dev-out.log
 /dev-err.log

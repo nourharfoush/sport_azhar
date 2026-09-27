@@ -9,7 +9,8 @@
     "lint": "eslint",
     "seed": "tsx src/scripts/seed.ts",
     "seed:regions": "tsx src/scripts/seed-regions.ts",
-    "seed:region-users": "tsx src/scripts/generate-region-users.ts"
+    "seed:region-users": "tsx src/scripts/generate-region-users.ts",
+    "seed:admin-users": "tsx src/scripts/generate-administration-users.ts"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
