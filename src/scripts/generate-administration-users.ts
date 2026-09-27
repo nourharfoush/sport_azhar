@@ -20,6 +20,7 @@ import path from "node:path";
 import bcrypt from "bcryptjs";
 import { loadEnvLocal } from "./load-env";
 import { Administration } from "../models/Administration";
+import { Region } from "../models/Region";
 import { User } from "../models/User";
 
 const MONGODB_URI_FALLBACK = "mongodb://127.0.0.1:27017/azhar_sports";
@@ -65,6 +66,8 @@ async function run() {
   await mongoose.connect(MONGODB_URI);
 
   // الإدارات مع بيانات المنطقة، مرتبة بالمنطقة ثم الاسم
+  // نمرّر Region.columns لضمان تسجيل موديل Region قبل populate
+  void Region.collection;
   const administrations = await Administration.find({})
     .populate<{ region: { _id: any; name: string; code: string } }>("region")
     .sort({ name: 1 })
@@ -119,8 +122,9 @@ async function run() {
     lines.push("========================================================");
 
     for (const admin of group.items) {
-      const slug = slugify(admin.name) || String(admin.code).toLowerCase();
-      const email = `${slug}.admin@azhar.edu.eg`;
+      const base = slugify(admin.name) || String(admin.code).toLowerCase();
+      // رمز المنطقة يضمن عدم تكرار البريد بين إدارات مختلفة بنفس الاسم
+      const email = `${base}.${String(admin.code).toLowerCase()}.admin@azhar.edu.eg`;
       const password = generatePassword();
       const passwordHash = await bcrypt.hash(password, 10);
 
@@ -139,16 +143,22 @@ async function run() {
         updated += 1;
         console.log(`✓ تم تحديث حساب إدارة: ${admin.name}`);
       } else {
+        // تفادي تصادم البريد مع حساب آخر (بريد مستخدم مسبقًا)
+        let uniqueEmail = email;
+        let suffix = 2;
+        while (await User.exists({ email: uniqueEmail })) {
+          uniqueEmail = `${base}.${suffix++}@azhar.edu.eg`;
+        }
         await User.create({
           name: `أ/ مدير ${admin.name}`,
-          email,
+          email: uniqueEmail,
           passwordHash,
           role: "administration",
           region: admin.region?._id ?? null,
           administration: admin._id,
         });
         lines.push(
-          `  - ${admin.name} (${admin.code}) -> البريد: ${email} | كلمة المرور: ${password}`,
+          `  - ${admin.name} (${admin.code}) -> البريد: ${uniqueEmail} | كلمة المرور: ${password}`,
         );
         created += 1;
         console.log(`✓ تم إنشاء حساب إدارة جديد: ${admin.name}`);
