@@ -87,8 +87,8 @@ function ReportSummary({ body }: { body: DailyReportBody }) {
     row("الالتزام بالزي", yesNo(b.uniformCompliant)),
     row("الكشكول", ex(b.recordBook)),
     b.recordBook === "present" ? row("حالة الكشكول", comp(b.recordBookCompleteness)) : null,
-    row("السجلان", ex(b.records)),
-    b.records === "present" ? row("حالة السجلين", comp(b.recordsCompleteness)) : null,
+    row("السجلات", ex(b.records)),
+    b.records === "present" ? row("حالة السجلات", comp(b.recordsCompleteness)) : null,
     b.recordsCompleteness === "incomplete" ? row("السجلات الناقصة", b.missingRecordsNames) : null,
     row("الخطة المالية", ex(b.financialPlan)),
     b.financialPlan === "absent" ? row("سبب عدم وجود الخطة", b.financialPlanAbsentReason) : null,
@@ -283,6 +283,7 @@ export function DailyReportCard({
     </div>
   );
 }
+
 
 
 

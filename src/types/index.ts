@@ -1,4 +1,4 @@
-// أدوار/مستويات المتابعة في النظام (بالترتيب الهرمي)
+﻿// أدوار/مستويات المتابعة في النظام (بالترتيب الهرمي)
 export const ROLES = [
   "general", // الإدارة العامة للرعاية الرياضية
   "region", // المنطقة الأزهرية
@@ -204,7 +204,7 @@ export interface DailyReportBody {
   // 6) الكشكول
   recordBook?: Existence;
   recordBookCompleteness?: Completeness;
-  // 7) السجلان
+  // 7) السجلات
   records?: Existence;
   recordsCompleteness?: Completeness;
   missingRecordsNames?: string;
@@ -257,4 +257,5 @@ export const NEWS_CATEGORY_LABELS: Record<NewsCategory, string> = {
   decision: "قرار وزاري / إداري",
   sports_report: "تقرير نتائج وبطولات",
 };
+
 

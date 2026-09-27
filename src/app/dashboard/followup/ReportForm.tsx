@@ -244,7 +244,7 @@ export function ReportFormFields({
         )}
       </Section>
 
-      <Section n={7} title="السجلان">
+      <Section n={7} title="السجلات">
         <select name="records" value={b.records ?? "present"} onChange={(e) => setRecords(e.target.value)} className={inputCls}>
           {EXISTENCE.map((v) => (
             <option key={v} value={v}>
@@ -255,7 +255,7 @@ export function ReportFormFields({
         {b.records === "present" && (
           <div className="mt-2.5 space-y-2.5">
             <div>
-              <label className={labelCls}>حالة السجلين</label>
+              <label className={labelCls}>حالة السجلات</label>
               <select
                 name="recordsCompleteness"
                 value={b.recordsCompleteness ?? "complete"}
@@ -342,6 +342,7 @@ export function ReportFormFields({
     </div>
   );
 }
+
 
 
 
