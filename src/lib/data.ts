@@ -120,6 +120,14 @@ export async function resolveTargetInstituteIds(event: IEvent) {
     }).select("_id");
     return insts.map((i) => i._id as Types.ObjectId);
   }
+  // تصفية "جميع الإدارات" للمنطقة: كل معاهد إدارات المنطقة
+  if (event.scope === "administration" && event.region) {
+    const admins = await Administration.find({ region: event.region }).select("_id");
+    const insts = await Institute.find({
+      administration: { $in: admins.map((a) => a._id) },
+    }).select("_id");
+    return insts.map((i) => i._id as Types.ObjectId);
+  }
   return [];
 }
 
@@ -131,6 +139,11 @@ async function instituteFilterForEvent(event: IEvent) {
   }
   if (event.scope === "administration" && event.administration) {
     return { administration: event.administration };
+  }
+  // تصفية "جميع الإدارات" للمنطقة: معاهد كل إدارات المنطقة
+  if (event.scope === "administration" && event.region) {
+    const admins = await Administration.find({ region: event.region }).select("_id");
+    return { administration: { $in: admins.map((a) => a._id) } };
   }
   return { _id: null };
 }

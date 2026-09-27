@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx src/scripts/seed.ts",
+    "seed:regions": "tsx src/scripts/seed-regions.ts",
     "seed:region-users": "tsx src/scripts/generate-region-users.ts"
   },
   "dependencies": {

@@ -25,6 +25,10 @@ export function buildEventFilter(user: SessionUser): Record<string, unknown> {
           ...(user.regionId
             ? [{ scope: "region", region: user.regionId }]
             : []),
+          // تصفيات "جميع الإدارات" التي أطلقتها المنطقة التابع لها (administration فارغ)
+          ...(user.regionId
+            ? [{ scope: "administration", region: user.regionId, administration: null }]
+            : []),
           ...(user.administrationId
             ? [{ scope: "administration", administration: user.administrationId }]
             : []),
@@ -152,6 +156,8 @@ export function canManageScopedItem(
   }
 
   if (user.role === "administration") {
+    // تصفية "جميع الإدارات" (administration فارغ) تديرها المنطقة فقط
+    if (!user.administrationId) return false;
     return (
       item.scope === "administration" &&
       String(item.administration ?? "") === String(user.administrationId ?? "")

@@ -38,7 +38,7 @@ export default async function FollowUpPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900">
-          متابعة المشاركات والنتائج الرياضية
+          المتابعات الشهرية والميدانية
         </h1>
         <p className="text-sm text-slate-500 mt-1">
           {isInstitute

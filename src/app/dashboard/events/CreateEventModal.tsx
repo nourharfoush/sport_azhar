@@ -105,9 +105,10 @@ export function CreateEventModal({
               <select
                 name="administrationId"
                 required
+                defaultValue="all"
                 className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30"
               >
-                <option value="">-- اختر الإدارة التعليمية --</option>
+                <option value="all">جميع الإدارات التعليمية بالمنطقة</option>
                 {administrations.map((a) => (
                   <option key={a._id} value={a._id}>
                     {a.name}
@@ -115,7 +116,7 @@ export function CreateEventModal({
                 ))}
               </select>
               <p className="text-[11px] text-slate-500 mt-1">
-                لا يمكن اختيار إدارة خارج منطقتك.
+                اختر «جميع الإدارات» لتعميم التصفيات على كل معاهد منطقتك، أو إدارة واحدة فقط. لا يمكن اختيار إدارة خارج منطقتك.
               </p>
             </div>
           )}

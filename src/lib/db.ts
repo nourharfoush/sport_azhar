@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { ensureDnsResolves } from "@/lib/dns-fix";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -25,9 +26,13 @@ export async function dbConnect(): Promise<typeof mongoose> {
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI as string, {
-      bufferCommands: false,
-    });
+    cached.promise = (async () => {
+      // ضمان عمل DNS قبل الاتصال (بعض أجهزة ويندوز تكتشف خادمًا داخليًا لا يرد)
+      await ensureDnsResolves();
+      return mongoose.connect(MONGODB_URI as string, {
+        bufferCommands: false,
+      });
+    })();
   }
 
   try {

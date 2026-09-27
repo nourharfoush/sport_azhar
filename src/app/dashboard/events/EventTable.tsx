@@ -60,7 +60,9 @@ export function EventTable({ events, canManageEvent, onEdit, onDelete }: Props) 
                       ? ` — ${e.regionName}`
                       : e.scope === "administration" && e.administrationName
                         ? ` — ${e.administrationName}`
-                        : ""}
+                        : e.scope === "administration"
+                          ? ` — جميع إدارات ${e.regionName ?? "المنطقة"}`
+                          : ""}
                   </strong>
                 </span>
                 {e.status === "draft" && (

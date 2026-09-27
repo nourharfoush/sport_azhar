@@ -40,6 +40,10 @@ async function resolveRequestedScope(
       if (!administrationId) {
         return { error: "اختر الإدارة التعليمية التي ستُقام لها تصفيات." };
       }
+      // خيار "جميع الإدارات": تصفية مشتركة لكل إدارات المنطقة (administration فارغ)
+      if (administrationId === "all") {
+        return { scope: "administration", region: session.regionId, administration: null };
+      }
       const admin = await Administration.findById(administrationId).select("_id region");
       if (!admin) {
         return { error: "الإدارة التعليمية غير موجودة." };

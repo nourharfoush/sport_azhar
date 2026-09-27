@@ -67,15 +67,23 @@ export default async function DashboardLayout({
             href="/dashboard/followup"
             className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition"
           >
-            📋 متابعة المشاركات والنتائج
+            📋 المتابعات الشهرية والميدانية
           </Link>
           {canManageEntities && (
-            <Link
-              href="/dashboard/entities"
-              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition"
-            >
-              🏢 الهيكل التنظيمي
-            </Link>
+            <>
+              <Link
+                href="/dashboard/users"
+                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition"
+              >
+                👥 إدارة المستخدمين والصلاحيات
+              </Link>
+              <Link
+                href="/dashboard/entities"
+                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition"
+              >
+                🏢 الهيكل التنظيمي
+              </Link>
+            </>
           )}
         </nav>
 

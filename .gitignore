@@ -48,3 +48,7 @@ next-env.d.ts
 
 # ุจูุงูุงุช ุฏุฎูู ุญุณุงุจุงุช ุงูู…ูุงุทู (ุญุณุงุณุฉ - ูุง ุชูุฑูุน ุนูู Git)
 /src/scripts/region-credentials.txt
+
+# ำฬแวส ฮวฯใ วแสุๆํั วแใอแํ
+/dev-out.log
+/dev-err.log
