@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -60,10 +60,10 @@ function SidebarContent({
           أ
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-bold leading-tight text-white">
+          <p className="truncate text-base font-extrabold leading-tight text-white">
             رعاية الطلاب الرياضية
           </p>
-          <p className="mt-0.5 text-[11px] font-medium text-emerald-400">
+          <p className="mt-0.5 text-xs font-semibold text-emerald-400">
             الأزهر الشريف
           </p>
         </div>
@@ -72,14 +72,14 @@ function SidebarContent({
       <div className="px-4 pt-4">
         <div className="rounded-2xl border border-slate-800 bg-slate-800/50 p-3.5">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-700 text-sm font-bold text-slate-100">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-700 text-base font-extrabold text-slate-100">
               {displayName(session.name).trim().charAt(0) || "م"}
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-100">
+              <p className="truncate text-base font-bold text-slate-100">
                 {displayName(session.name)}
               </p>
-              <span className="mt-1 inline-block rounded-full border border-emerald-700/60 bg-emerald-950/70 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+              <span className="mt-1 inline-block rounded-full border border-emerald-700/60 bg-emerald-950/70 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300">
                 {ROLE_LABELS[session.role]}
               </span>
             </div>
@@ -87,7 +87,7 @@ function SidebarContent({
         </div>
       </div>
 
-      <nav className="flex-1 space-y-6 overflow-y-auto px-4 py-6 text-sm font-medium">
+      <nav className="flex-1 space-y-6 overflow-y-auto px-4 py-6 text-base font-semibold">
         {NAV_GROUPS.map((group) => {
           const items = group.items.filter(
             (item) =>
@@ -97,7 +97,7 @@ function SidebarContent({
 
           return (
             <div key={group.title}>
-              <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <p className="mb-2 px-3 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
                 {group.title}
               </p>
               <ul className="space-y-1">
@@ -109,10 +109,10 @@ function SidebarContent({
                         href={item.href}
                         onClick={onNavigate}
                         aria-current={active ? "page" : undefined}
-                        className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition ${
+                        className={`group relative flex items-center gap-3.5 rounded-xl px-3.5 py-3 transition ${
                           active
-                            ? "bg-emerald-600/15 font-semibold text-white ring-1 ring-inset ring-emerald-500/40"
-                            : "text-slate-400 hover:bg-slate-800/80 hover:text-slate-100"
+                            ? "bg-emerald-600/15 font-bold text-white ring-1 ring-inset ring-emerald-500/40"
+                            : "font-semibold text-slate-300 hover:bg-slate-800/80 hover:text-white"
                         }`}
                       >
                         {active && (
@@ -120,7 +120,7 @@ function SidebarContent({
                         )}
                         <span
                           aria-hidden
-                          className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg text-base transition ${
+                          className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg text-lg transition ${
                             active
                               ? "bg-emerald-600 text-white"
                               : "bg-slate-800/70 group-hover:bg-slate-700"
@@ -144,7 +144,7 @@ function SidebarContent({
         <form action={logoutAction}>
           <button
             type="submit"
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-2.5 text-xs font-semibold text-slate-300 transition hover:border-rose-800 hover:bg-rose-950/60 hover:text-rose-300"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-3 text-sm font-bold text-slate-300 transition hover:border-rose-800 hover:bg-rose-950/60 hover:text-rose-300"
           >
             <span aria-hidden>↩</span>
             تسجيل الخروج
@@ -182,7 +182,7 @@ export function DashboardShell({
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-100 md:flex-row">
-      <aside className="sticky top-0 hidden h-screen w-72 shrink-0 border-l border-slate-800 md:block">
+      <aside className="sticky top-0 hidden h-screen w-80 shrink-0 border-l border-slate-800 md:block">
         <SidebarContent session={session} />
       </aside>
 
@@ -194,7 +194,7 @@ export function DashboardShell({
             onClick={() => setOpen(false)}
             className="absolute inset-0 h-full w-full bg-slate-900/60 backdrop-blur-sm"
           />
-          <div className="absolute inset-y-0 right-0 w-72 max-w-[85%] shadow-2xl">
+          <div className="absolute inset-y-0 right-0 w-80 max-w-[85%] shadow-2xl">
             <SidebarContent session={session} onNavigate={() => setOpen(false)} />
           </div>
         </div>
@@ -211,10 +211,10 @@ export function DashboardShell({
             ☰
           </button>
           <div className="min-w-0 text-center">
-            <p className="truncate text-sm font-bold text-slate-900">
+            <p className="truncate text-base font-bold text-slate-900">
               رعاية الطلاب الرياضية
             </p>
-            <p className="text-[10px] text-emerald-600">الأزهر الشريف</p>
+            <p className="text-xs text-emerald-600">الأزهر الشريف</p>
           </div>
           <ThemeToggle compact tone="light" />
         </header>
