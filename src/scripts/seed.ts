@@ -200,9 +200,46 @@ async function run() {
   const eventFitness = await Event.create({
     title: "بطولة الجمهورية الأزهرية لللياقة البدنية",
     sport: "اللياقة البدنية",
+    gender: "بنين",
     season: "2025/2026",
     description:
       "بطولة اللياقة البدنية لطلاب الأزهر على مستوى الجمهورية، وتشمل اختبارات اللياقة العامة والسرعة والقوة.",
+    scope: "general",
+    status: "published",
+    createdBy: generalUser._id,
+  });
+
+  // 5ج. مسابقات فئة الفتيات (المرشدات والزهرات)
+  await Event.create({
+    title: "مسابقة الزهرات على مستوى الجمهورية",
+    sport: "الزهرات",
+    gender: "فتيات",
+    season: "2025/2026",
+    description:
+      "مسابقة تفوق دراسي ورياضي لطالبات الأزهر (الزهرات) على مستوى الجمهورية.",
+    scope: "general",
+    status: "published",
+    createdBy: generalUser._id,
+  });
+
+  await Event.create({
+    title: "مسابقة المرشدات على مستوى الجمهورية",
+    sport: "المرشدات",
+    gender: "فتيات",
+    season: "2025/2026",
+    description:
+      "مسابقة المرشدات في الأنشطة المدرسية ودور التوجيه الصحي بين الطالبات.",
+    scope: "general",
+    status: "published",
+    createdBy: generalUser._id,
+  });
+
+  await Event.create({
+    title: "بطولة الجمهورية الأزهرية لكرة السلة للسيدات",
+    sport: "كرة السلة",
+    gender: "فتيات",
+    season: "2025/2026",
+    description: "بطولة كرة السلة لطالبات الأزهر على مستوى الجمهورية.",
     scope: "general",
     status: "published",
     createdBy: generalUser._id,

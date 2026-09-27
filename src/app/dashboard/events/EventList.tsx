@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { SPORTS, type Role } from "@/types";
+import {
+  SPORTS,
+  SPORTS_BY_GENDER,
+  GENDERS,
+  GENDER_LABELS,
+  type Gender,
+  type Role,
+} from "@/types";
 import { EventItem } from "./types";
 import {
   createEventAction,
@@ -36,6 +43,7 @@ export function EventList({
 
   const [search, setSearch] = useState("");
   const [sportFilter, setSportFilter] = useState("all");
+  const [genderFilter, setGenderFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -58,6 +66,7 @@ export function EventList({
   };
 
   const filteredEvents = events.filter((e) => {
+    if (genderFilter !== "all" && e.gender !== genderFilter) return false;
     if (sportFilter !== "all" && e.sport !== sportFilter) return false;
     if (statusFilter !== "all" && e.status !== statusFilter) return false;
     if (search.trim()) {
@@ -128,16 +137,31 @@ export function EventList({
           />
 
           <select
+            value={genderFilter}
+            onChange={(e) => setGenderFilter(e.target.value)}
+            className="px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white"
+          >
+            <option value="all">جميع الفئات</option>
+            {GENDERS.map((g) => (
+              <option key={g} value={g}>
+                {GENDER_LABELS[g]}
+              </option>
+            ))}
+          </select>
+
+          <select
             value={sportFilter}
             onChange={(e) => setSportFilter(e.target.value)}
             className="px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white"
           >
             <option value="all">جميع الألعاب الرياضية</option>
-            {SPORTS.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
+            {(SPORTS_BY_GENDER[(genderFilter === "all" ? "بنين" : genderFilter) as Gender] ?? SPORTS).map(
+              (s: string) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ),
+            )}
           </select>
 
           <select
@@ -152,10 +176,11 @@ export function EventList({
             <option value="archived">مؤرشفة</option>
           </select>
 
-          {(search || sportFilter !== "all" || statusFilter !== "all") && (
+          {(search || genderFilter !== "all" || sportFilter !== "all" || statusFilter !== "all") && (
             <button
               onClick={() => {
                 setSearch("");
+                setGenderFilter("all");
                 setSportFilter("all");
                 setStatusFilter("all");
               }}

@@ -1,4 +1,10 @@
-import { SPORTS } from "@/types";
+import { useState } from "react";
+import {
+  GENDERS,
+  GENDER_LABELS,
+  SPORTS_BY_GENDER,
+  type Gender,
+} from "@/types";
 import { EventItem } from "./types";
 
 interface Props {
@@ -10,6 +16,9 @@ interface Props {
 }
 
 export function EditEventModal({ event, onClose, onSubmit, loading, error }: Props) {
+  const [gender, setGender] = useState<Gender>(event?.gender ?? "بنين");
+  const [sport, setSport] = useState<string>(event?.sport ?? "");
+
   if (!event) return null;
 
   return (
@@ -44,19 +53,38 @@ export function EditEventModal({ event, onClose, onSubmit, loading, error }: Pro
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">اللعبة الرياضية *</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">فئة المتسابقين *</label>
               <select
-                name="sport"
-                defaultValue={event.sport}
-                required
+                name="gender"
+                value={gender}
+                onChange={(e) => {
+                  setGender(e.target.value as Gender);
+                  setSport("");
+                }}
                 className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white"
               >
-                {SPORTS.map((s) => (
-                  <option key={s} value={s}>{s}</option>
+                {GENDERS.map((g) => (
+                  <option key={g} value={g}>
+                    {GENDER_LABELS[g]}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">اللعبة الرياضية *</label>
+              <select
+                name="sport"
+                value={sport}
+                onChange={(e) => setSport(e.target.value)}
+                required
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white"
+              >
+                {(SPORTS_BY_GENDER[gender] ?? []).map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+            <div className="col-span-2">
               <label className="block text-xs font-semibold text-slate-700 mb-1">الموسم الرياضي</label>
               <input
                 type="text"

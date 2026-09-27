@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { SPORTS, EVENT_SCOPE_LABELS, type EventScope, type Role } from "@/types";
+import {
+  GENDERS,
+  GENDER_LABELS,
+  SPORTS_BY_GENDER,
+  EVENT_SCOPE_LABELS,
+  type EventScope,
+  type Gender,
+  type Role,
+} from "@/types";
 
 interface AdministrationOption {
   _id: string;
@@ -34,6 +42,8 @@ export function CreateEventModal({
   const defaultScope: EventScope =
     userRole === "general" ? "general" : userRole === "region" ? "region" : "administration";
   const [scope, setScope] = useState<EventScope>(defaultScope);
+  const [gender, setGender] = useState<Gender>("بنين");
+  const [sport, setSport] = useState<string>("");
 
   if (!open) return null;
 
@@ -178,19 +188,39 @@ export function CreateEventModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">اللعبة الرياضية *</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">فئة المتسابقين *</label>
               <select
-                name="sport"
-                required
+                name="gender"
+                value={gender}
+                onChange={(e) => {
+                  setGender(e.target.value as Gender);
+                  setSport("");
+                }}
                 className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white"
               >
-                <option value="">اختر اللعبة...</option>
-                {SPORTS.map((s) => (
-                  <option key={s} value={s}>{s}</option>
+                {GENDERS.map((g) => (
+                  <option key={g} value={g}>
+                    {GENDER_LABELS[g]}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">اللعبة الرياضية *</label>
+              <select
+                name="sport"
+                required
+                value={sport}
+                onChange={(e) => setSport(e.target.value)}
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white"
+              >
+                <option value="">اختر اللعبة...</option>
+                {(SPORTS_BY_GENDER[gender] ?? []).map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+            <div className="col-span-2">
               <label className="block text-xs font-semibold text-slate-700 mb-1">الموسم الرياضي</label>
               <input
                 type="text"

@@ -83,6 +83,31 @@ export const SPORTS = [
   "السباحة",
 ] as const;
 
+/** فئة المتسابقين */
+export const GENDERS = ["بنين", "فتيات"] as const;
+
+export type Gender = (typeof GENDERS)[number];
+
+export const GENDER_LABELS: Record<Gender, string> = {
+  بنين: "بنين",
+  فتيات: "فتيات",
+};
+
+/** ألعاب خاصة بفتيات (تشمل المرشدات والزهرات) */
+export const FEMALE_ONLY_SPORTS = ["المرشدات", "الزهرات"] as const;
+
+/** قائمة الألعاب لكل فئة: بنين = القائمة العامة، وفتيات = العامة + ألعاب الفتيات */
+export const SPORTS_BY_GENDER: Record<Gender, readonly string[]> = {
+  بنين: SPORTS,
+  فتيات: [...SPORTS, ...FEMALE_ONLY_SPORTS],
+};
+
+/** التحقق من صحة اللعبة بالنسبة للفئة المختارة */
+export function isSportValid(gender: string, sport: string): boolean {
+  const list = SPORTS_BY_GENDER[gender as Gender] ?? SPORTS;
+  return list.includes(sport);
+}
+
 
 // ─────────────────────────────────────────────────────────────
 // الخطة الشهرية للموجّه + التقارير اليومية

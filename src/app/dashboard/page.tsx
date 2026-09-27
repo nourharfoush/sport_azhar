@@ -119,8 +119,8 @@ export default async function DashboardPage() {
                     {e.title}
                   </div>
                   <div className="text-xs text-slate-500 mt-0.5">
-                    الرياضة: {e.sport} • الموسم: {e.season} • المستوى:{" "}
-                    {EVENT_SCOPE_LABELS[e.scope] ?? e.scope}
+                    الرياضة: {e.sport} • الفئة: {e.gender ?? "بنين"} • الموسم:{" "}
+                    {e.season} • المستوى: {EVENT_SCOPE_LABELS[e.scope] ?? e.scope}
                   </div>
                 </div>
 

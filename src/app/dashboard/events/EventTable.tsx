@@ -35,6 +35,15 @@ export function EventTable({ events, canManageEvent, onEdit, onDelete }: Props) 
                   {e.sport}
                 </span>
                 <span
+                  className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${
+                    e.gender === "فتيات"
+                      ? "bg-pink-50 text-pink-700 border-pink-200"
+                      : "bg-sky-50 text-sky-700 border-sky-200"
+                  }`}
+                >
+                  {e.gender}
+                </span>
+                <span
                   className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
                     e.status === "published"
                       ? "bg-blue-50 text-blue-700 border border-blue-200"

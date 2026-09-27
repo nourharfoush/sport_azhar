@@ -2,6 +2,7 @@ import { getSession } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import { Administration } from "@/models/Administration";
 import { Region } from "@/models/Region";
+import type { Gender } from "@/types";
 import { getVisibleEvents, refId, refName } from "@/lib/data";
 import { EventList } from "./EventList";
 
@@ -30,6 +31,7 @@ export default async function EventsPage() {
     _id: String(e._id),
     title: e.title,
     sport: e.sport,
+    gender: (e.gender as Gender) ?? "بنين",
     season: e.season,
     description: e.description || "",
     scope: e.scope,

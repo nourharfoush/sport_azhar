@@ -1,9 +1,10 @@
-import { EventStatus, EventScope } from "@/types";
+import { EventStatus, EventScope, type Gender } from "@/types";
 
 export interface EventItem {
   _id: string;
   title: string;
   sport: string;
+  gender: Gender;
   season: string;
   description?: string;
   scope: EventScope;

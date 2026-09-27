@@ -1,9 +1,16 @@
 import mongoose, { Schema, Model, Document, Types } from "mongoose";
 import {
-  SPORTS,
+  SPORTS_BY_GENDER,
+  GENDERS,
   EVENT_STATUSES,
   type EventStatus,
+  type Gender,
 } from "@/types";
+
+/** كل الرياضات المسموح بها في أي فئة (بنين + فتيات) */
+const ALL_SPORTS = [
+  ...new Set<string>([...(SPORTS_BY_GENDER.بنين ?? []), ...(SPORTS_BY_GENDER.فتيات ?? [])]),
+];
 
 /**
  * فعالية / مسابقة رياضية.
@@ -15,6 +22,7 @@ import {
 export interface IEvent extends Document {
   title: string;
   sport: string;
+  gender: Gender;
   season: string;
   description?: string;
   scope: "general" | "region" | "administration";
@@ -30,7 +38,8 @@ export interface IEvent extends Document {
 const EventSchema = new Schema<IEvent>(
   {
     title: { type: String, required: true, trim: true },
-    sport: { type: String, enum: SPORTS, required: true },
+    gender: { type: String, enum: GENDERS, default: "بنين" },
+    sport: { type: String, enum: ALL_SPORTS, required: true },
     season: { type: String, required: true, trim: true, default: "2025/2026" },
     description: { type: String, trim: true },
     scope: {

@@ -10,7 +10,18 @@ import { canManageScopedItem } from "@/lib/rbac";
 import { Administration } from "@/models/Administration";
 import { Region } from "@/models/Region";
 import { Institute } from "@/models/Institute";
-import { SPORTS, FOLLOWUP_STATUSES, EVENT_STATUSES, type EventStatus, type FollowupStatus, type EventScope } from "@/types";
+import {
+  SPORTS,
+  SPORTS_BY_GENDER,
+  GENDERS,
+  isSportValid,
+  FOLLOWUP_STATUSES,
+  EVENT_STATUSES,
+  type EventStatus,
+  type FollowupStatus,
+  type EventScope,
+  type Gender,
+} from "@/types";
 
 /**
  * تحديد نطاق (مستوى) المسابقة الجديدة حسب دور المستخدم مع التحقق من الصلاحية:
@@ -115,6 +126,7 @@ export async function createEventAction(formData: FormData): Promise<{ success: 
   }
 
   const title = String(formData.get("title") ?? "").trim();
+  const gender = String(formData.get("gender") ?? "بنين").trim() as Gender;
   const sport = String(formData.get("sport") ?? "");
   const season = String(formData.get("season") ?? "2025/2026").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -124,8 +136,17 @@ export async function createEventAction(formData: FormData): Promise<{ success: 
   if (!title || !sport) {
     return { success: false, error: "يرجى كتابة اسم المسابقة واختيار اللعبة." };
   }
-  if (!SPORTS.includes(sport as (typeof SPORTS)[number])) {
-    return { success: false, error: "اللعبة الرياضية غير صالحة." };
+  if (!GENDERS.includes(gender)) {
+    return { success: false, error: "فئة المتسابقين غير صالحة." };
+  }
+  if (!isSportValid(gender, sport)) {
+    return {
+      success: false,
+      error:
+        gender === "فتيات" && !SPORTS.includes(sport as (typeof SPORTS)[number])
+          ? "هذه اللعبة متاحة لفئة البنات فقط (المرشدات / الزهرات)."
+          : "اللعبة الرياضية غير صالحة.",
+    };
   }
 
   await dbConnect();
@@ -140,6 +161,7 @@ export async function createEventAction(formData: FormData): Promise<{ success: 
   try {
     await Event.create({
       title,
+      gender,
       sport,
       season,
       description,
@@ -190,6 +212,7 @@ export async function updateEventAction(formData: FormData): Promise<{ success: 
 
   const id = String(formData.get("id") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
+  const gender = String(formData.get("gender") ?? "بنين").trim() as Gender;
   const sport = String(formData.get("sport") ?? "");
   const season = String(formData.get("season") ?? "2025/2026").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -200,8 +223,17 @@ export async function updateEventAction(formData: FormData): Promise<{ success: 
   if (!id || !title || !sport) {
     return { success: false, error: "يرجى استيفاء الحقول الإلزامية." };
   }
-  if (!SPORTS.includes(sport as (typeof SPORTS)[number])) {
-    return { success: false, error: "الرياضة المختارة غير صالحة." };
+  if (!GENDERS.includes(gender)) {
+    return { success: false, error: "فئة المتسابقين غير صالحة." };
+  }
+  if (!isSportValid(gender, sport)) {
+    return {
+      success: false,
+      error:
+        gender === "فتيات" && !SPORTS.includes(sport as (typeof SPORTS)[number])
+          ? "هذه اللعبة متاحة لفئة البنات فقط (المرشدات / الزهرات)."
+          : "الرياضة المختارة غير صالحة.",
+    };
   }
 
   await dbConnect();
@@ -218,6 +250,7 @@ export async function updateEventAction(formData: FormData): Promise<{ success: 
     }
 
     event.title = title;
+    event.gender = gender;
     event.sport = sport;
     event.season = season;
     event.description = description;
