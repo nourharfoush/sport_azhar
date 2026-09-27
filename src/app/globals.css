@@ -72,11 +72,14 @@ body {
 .dark .border-slate-200,
 .dark .border-slate-300,
 .dark .border-slate-400,
-.dark .border-slate-100,
-.dark .divide-slate-100,
-.dark .divide-slate-200 {
+.dark .border-slate-100 {
   border-color: #1e293b !important;
-  --tw-divide-*: #1e293b;
+}
+
+/* divide-* في Tailwind v4 يضبط لون الحدود على العناصر الفرعية مباشرة */
+.dark .divide-slate-100 > *,
+.dark .divide-slate-200 > * {
+  border-color: #1e293b !important;
 }
 
 .dark .bg-emerald-50,
