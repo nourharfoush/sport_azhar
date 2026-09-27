@@ -7,6 +7,7 @@ import {
   deleteVisitAction,
 } from "./planActions";
 import { ReportFormFields } from "./ReportForm";
+import { visibleReportFields } from "./reportRules";
 import {
   DAILY_REPORT_STATUS_LABELS,
   VISIT_TYPES,
@@ -50,61 +51,70 @@ function fmtDate(iso: string): { weekday: string; date: string } {
  * - المدير: يعرض حالة التقرير فقط.
  */
 /** هل محتوى التقرير يحتوي أي قيمة؟ (لإخفاء الملخّص الفارغ) */
-function hasAnyBody(b: DailyReportBody | undefined): boolean {
-  if (!b) return false;
-  return Object.values(b).some(
-    (v) => v !== undefined && v !== null && v !== "",
-  );
-}
 
-/** عرض التقرير المُرسل للمدير (قراءة فقط). */
-function ReportSummary({ body }: { body: DailyReportBody }) {
-  const b = body ?? {};
-  const row = (k: string, v: unknown) =>
-    v === undefined || v === null || v === "" ? null : (
-      <div key={k} className="flex gap-2 text-xs">
-        <span className="font-semibold text-slate-600 shrink-0">{k}:</span>
-        <span className="text-slate-800">{String(v)}</span>
-      </div>
-    );
-
-  const yesNo = (v?: string) => (v === "yes" ? "نعم" : v === "no" ? "لا" : undefined);
-  const ex = (v?: string) => (v === "present" ? "موجود" : v === "absent" ? "غير موجود" : undefined);
-  const comp = (v?: string) => (v === "complete" ? "مكتمل" : v === "incomplete" ? "غير مكتمل" : undefined);
-  const att = (v?: string) => (v === "present" ? "حاضر" : v === "absent" ? "غائب" : undefined);
-  const exec = (v?: string) =>
-    v === "full" ? "تم تنفيذ الخطة" : v === "partial" ? "تم تنفيذ جزء منها" : v === "none" ? "لم تنفذ" : undefined;
-
-  const parts = [
-    row("عدد الطلاب", b.studentCount),
-    b.boysCount !== undefined || b.girlsCount !== undefined
-      ? row("بنين/بنات", `${b.boysCount ?? 0} / ${b.girlsCount ?? 0}`)
-      : null,
-    row("معلّم التربية الرياضية", att(b.peTeacherPresent)),
-    row("منتدب لمعهد آخر", yesNo(b.seconded)),
-    b.seconded === "yes" ? row("اسم المعهد الآخر", b.secondedInstituteName) : null,
-    row("عدد الحصص", b.peLessonsCount),
-    row("الالتزام بالزي", yesNo(b.uniformCompliant)),
-    row("الكشكول", ex(b.recordBook)),
-    b.recordBook === "present" ? row("حالة الكشكول", comp(b.recordBookCompleteness)) : null,
-    row("السجلات", ex(b.records)),
-    b.records === "present" ? row("حالة السجلات", comp(b.recordsCompleteness)) : null,
-    b.recordsCompleteness === "incomplete" ? row("السجلات الناقصة", b.missingRecordsNames) : null,
-    row("الخطة المالية", ex(b.financialPlan)),
-    b.financialPlan === "absent" ? row("سبب عدم وجود الخطة", b.financialPlanAbsentReason) : null,
-    b.financialPlan === "present" ? row("مدى التنفيذ", exec(b.financialPlanExecution)) : null,
-    row("الإيجابيات", b.positives),
-    row("السلبيات", b.negatives),
-    row("المقترحات", b.suggestions),
-    row("ملاحظات عامة", b.generalNotes),
-  ].filter(Boolean);
-
+/**
+ * جدول عرض التقرير المُرسل (قراءة فقط) + زر طباعة.
+ * يطبع التقرير وحده عبر CSS الطباعة في globals.css.
+ */
+function ReportTable({
+  instituteName,
+  visitDate,
+  visitType,
+  supervisorName,
+  body,
+}: {
+  instituteName: string;
+  visitDate: string;
+  visitType: string;
+  supervisorName: string;
+  body: DailyReportBody;
+}) {
+  const fields = visibleReportFields(body ?? {}, "");
   return (
-    <div className="mt-4 pt-4 border-t border-slate-100">
-      <p className="text-xs font-bold text-slate-700 mb-2">بيانات التقرير</p>
-      <div className="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
-        {parts}
+    <div className="mt-4 pt-4 border-t border-slate-100 print-area">
+      <div className="flex items-center justify-between mb-2 print:hidden">
+        <p className="text-xs font-bold text-slate-700">بيانات التقرير</p>
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+        >
+          🖨 طباعة التقرير
+        </button>
       </div>
+
+      <table className="w-full text-right border-collapse text-xs">
+        <thead className="hidden print:table-header-group">
+          <tr>
+            <th className="py-1 px-2">البند</th>
+            <th className="py-1 px-2">القيمة</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-b border-slate-200">
+            <th className="py-1.5 px-2 text-slate-600 font-semibold w-1/3">المعهد</th>
+            <td className="py-1.5 px-2 font-bold text-slate-900">{instituteName}</td>
+          </tr>
+          <tr className="border-b border-slate-200">
+            <th className="py-1.5 px-2 text-slate-600 font-semibold">الموجّه</th>
+            <td className="py-1.5 px-2 text-slate-800">{supervisorName}</td>
+          </tr>
+          <tr className="border-b border-slate-200">
+            <th className="py-1.5 px-2 text-slate-600 font-semibold">نوع الزيارة</th>
+            <td className="py-1.5 px-2 text-slate-800">{visitType}</td>
+          </tr>
+          <tr className="border-b border-slate-200">
+            <th className="py-1.5 px-2 text-slate-600 font-semibold">التاريخ</th>
+            <td className="py-1.5 px-2 text-slate-800">{visitDate}</td>
+          </tr>
+          {fields.map((f) => (
+            <tr key={f.key} className="border-b border-slate-200">
+              <th className="py-1.5 px-2 text-slate-600 font-semibold w-1/3">{f.label}</th>
+              <td className="py-1.5 px-2 text-slate-800 whitespace-pre-wrap">{f.format(body ?? {})}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -240,50 +250,36 @@ export function DailyReportCard({
         </div>
       )}
 
-      {(locked || (isSupervisor && !open)) && hasAnyBody(visit.body) && (
-        <ReportSummary body={visit.body} />
+      {(locked || (isSupervisor && !open)) && (
+        <ReportTable
+          instituteName={visit.instituteName}
+          visitDate={date}
+          visitType={VISIT_TYPE_LABELS[visit.visitType]}
+          supervisorName={visit.supervisorName}
+          body={visit.body}
+        />
       )}
 
 
       {isSupervisor && open && !locked && (
-        <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
+        <div className="mt-4 pt-4 border-t border-slate-100">
           <form action={saveAction} className="space-y-3">
             <input type="hidden" name="visitId" value={visit._id} />
             <ReportFormFields
               instituteName={visit.instituteName}
               instituteType={visit.instituteType}
               body={visit.body ?? {}}
+              pending={saving}
             />
-
-            {saveState?.error && <p className="text-xs text-rose-700">{saveState.error}</p>}
-
-            <div className="flex flex-wrap gap-2 pt-2">
-              <button
-                type="submit"
-                name="intent"
-                value="submitted"
-                disabled={saving}
-                className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition"
-              >
-                {saving ? "جارٍ الإرسال..." : "إرسال التقرير"}
-              </button>
-              <button
-                type="submit"
-                name="intent"
-                value="draft"
-                disabled={saving}
-                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition"
-              >
-                حفظ كمسودة
-              </button>
-            </div>
+            {saveState?.error && (
+              <p className="text-xs text-rose-700">{saveState.error}</p>
+            )}
           </form>
         </div>
       )}
     </div>
   );
 }
-
 
 
 

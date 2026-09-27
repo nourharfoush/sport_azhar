@@ -1,0 +1,17 @@
+﻿import { missingReportFields, isReportComplete, visibleReportFields } from "./src/app/dashboard/followup/reportRules";
+console.log("--- empty report (مشترك) ---");
+console.log("missing:", missingReportFields({}, "مشترك").join(" | "));
+console.log("complete?", isReportComplete({}, "مشترك"));
+console.log("--- empty report (بنين) ---");
+console.log("missing:", missingReportFields({}, "بنين").join(" | "));
+const full: any = { studentCount: 400, boysCount: 200, girlsCount: 200, peTeacherPresent: "present", seconded: "no", peLessonsCount: 5, uniformCompliant: "yes", recordBook: "present", recordBookCompleteness: "complete", records: "present", recordsCompleteness: "complete", financialPlan: "present", financialPlanExecution: "full", positives: "a", negatives: "b", suggestions: "c", generalNotes: "d" };
+console.log("--- full report ---");
+console.log("missing:", missingReportFields(full, "مشترك").join(" | ") || "(none)");
+console.log("complete?", isReportComplete(full, "مشترك"));
+console.log("visible rows:", visibleReportFields(full, "مشترك").length);
+const partial: any = { ...full, seconded: "yes" };
+console.log("--- seconded=yes without institute name ---");
+console.log("missing:", missingReportFields(partial, "مشترك").join(" | "));
+partial.secondedInstituteName = "معهد الزهور";
+console.log("--- after naming it ---");
+console.log("complete?", isReportComplete(partial, "مشترك"), "| rows:", visibleReportFields(partial, "مشترك").length);

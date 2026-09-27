@@ -12,6 +12,7 @@ import { MonthlyVisit } from "@/models/MonthlyVisit";
 import { DailyReport } from "@/models/DailyReport";
 import { VISIT_TYPES, type SessionUser, type VisitType } from "@/types";
 import { isPlanManager, supervisedRolesFor } from "./planScope";
+import { missingReportFields } from "./reportRules";
 import {
   ATTENDANCE,
   COMPLETENESS,
@@ -371,6 +372,19 @@ export async function saveDailyReportAction(
   }
 
   const isSubmit = fd(formData, "intent") === "submitted";
+  const body = parseReportBody(formData);
+
+  if (isSubmit) {
+    // التحقق في السيرفر لا يكتفي بتعطيل الزر في العميل
+    const inst = await Institute.findById(visit.institute).select("type");
+    const missing = missingReportFields(body, inst?.type ?? "مشترك");
+    if (missing.length) {
+      return {
+        success: false,
+        error: `لا يمكن الإرسال قبل اكتمال الحقول: ${missing.join("، ")}`,
+      };
+    }
+  }
 
   await DailyReport.findOneAndUpdate(
     { visit: visitId },
@@ -378,7 +392,7 @@ export async function saveDailyReportAction(
       $set: {
         month: visit.month,
         supervisor: visit.supervisor,
-        body: parseReportBody(formData),
+        body,
         status: isSubmit ? "submitted" : "draft",
         ...(isSubmit ? { submittedAt: new Date() } : {}),
       },
@@ -389,4 +403,5 @@ export async function saveDailyReportAction(
   revalidatePath("/dashboard/followup");
   return { success: true };
 }
+
 

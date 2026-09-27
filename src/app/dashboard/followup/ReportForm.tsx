@@ -14,6 +14,7 @@ import {
   PLAN_EXECUTION_LABELS,
   type DailyReportBody,
 } from "@/types";
+import { missingReportFields } from "./reportRules";
 
 /** عنوان قسم داخل النموذج. */
 function Section({
@@ -53,13 +54,17 @@ export function ReportFormFields({
   instituteName,
   instituteType,
   body,
+  pending,
 }: {
   instituteName: string;
   instituteType: string;
   body: DailyReportBody;
+  pending: boolean;
 }) {
   const [b, setB] = useState<DailyReportBody>(body ?? {});
   const isMixed = instituteType === "مشترك";
+  const missing = missingReportFields(b, instituteType);
+  const complete = missing.length === 0;
 
   const set = <K extends keyof DailyReportBody>(k: K, v: DailyReportBody[K]) =>
     setB((prev) => ({ ...prev, [k]: v }));
@@ -161,22 +166,28 @@ export function ReportFormFields({
       </Section>
 
       <Section n={2} title="معلّم التربية الرياضية">
-        <select name="peTeacherPresent" value={b.peTeacherPresent ?? "present"} onChange={(e) => set("peTeacherPresent", e.target.value as DailyReportBody["peTeacherPresent"])} className={inputCls}>
-          {ATTENDANCE.map((a) => (
+        <select name="peTeacherPresent" value={b.peTeacherPresent ?? ""} onChange={(e) => set("peTeacherPresent", e.target.value as DailyReportBody["peTeacherPresent"])} className={inputCls}>
+          <>
+            <option value="">-- اختر --</option>
+            {ATTENDANCE.map((a) => (
             <option key={a} value={a}>
               {ATTENDANCE_LABELS[a]}
             </option>
           ))}
+        </>
         </select>
       </Section>
 
       <Section n={3} title="الانتداب لمعهد آخر">
-        <select name="seconded" value={b.seconded ?? "no"} onChange={(e) => setSeconded(e.target.value)} className={inputCls}>
-          {YES_NO.map((v) => (
+        <select name="seconded" value={b.seconded ?? ""} onChange={(e) => setSeconded(e.target.value)} className={inputCls}>
+          <>
+            <option value="">-- اختر --</option>
+            {YES_NO.map((v) => (
             <option key={v} value={v}>
               {YES_NO_LABELS[v]}
             </option>
           ))}
+        </>
         </select>
         {b.seconded === "yes" && (
           <div className="mt-2.5">
@@ -203,29 +214,35 @@ export function ReportFormFields({
       </Section>
 
       <Section n={5} title="الالتزام بالزي الرياضي">
-        <select name="uniformCompliant" value={b.uniformCompliant ?? "no"} onChange={(e) => set("uniformCompliant", e.target.value as DailyReportBody["uniformCompliant"])} className={inputCls}>
-          {YES_NO.map((v) => (
+        <select name="uniformCompliant" value={b.uniformCompliant ?? ""} onChange={(e) => set("uniformCompliant", e.target.value as DailyReportBody["uniformCompliant"])} className={inputCls}>
+          <>
+            <option value="">-- اختر --</option>
+            {YES_NO.map((v) => (
             <option key={v} value={v}>
               {YES_NO_LABELS[v]}
             </option>
           ))}
+        </>
         </select>
       </Section>
 
       <Section n={6} title="الكشكول">
-        <select name="recordBook" value={b.recordBook ?? "present"} onChange={(e) => setRecordBook(e.target.value)} className={inputCls}>
-          {EXISTENCE.map((v) => (
+        <select name="recordBook" value={b.recordBook ?? ""} onChange={(e) => setRecordBook(e.target.value)} className={inputCls}>
+          <>
+            <option value="">-- اختر --</option>
+            {EXISTENCE.map((v) => (
             <option key={v} value={v}>
               {EXISTENCE_LABELS[v]}
             </option>
           ))}
+        </>
         </select>
         {b.recordBook === "present" && (
           <div className="mt-2.5">
             <label className={labelCls}>حالة الكشكول</label>
             <select
               name="recordBookCompleteness"
-              value={b.recordBookCompleteness ?? "complete"}
+              value={b.recordBookCompleteness ?? ""}
               onChange={(e) =>
                 set(
                   "recordBookCompleteness",
@@ -234,23 +251,29 @@ export function ReportFormFields({
               }
               className={inputCls}
             >
-              {COMPLETENESS.map((v) => (
+              <>
+                <option value="">-- اختر --</option>
+                {COMPLETENESS.map((v) => (
                 <option key={v} value={v}>
                   {COMPLETENESS_LABELS[v]}
                 </option>
               ))}
+            </>
             </select>
           </div>
         )}
       </Section>
 
       <Section n={7} title="السجلات">
-        <select name="records" value={b.records ?? "present"} onChange={(e) => setRecords(e.target.value)} className={inputCls}>
-          {EXISTENCE.map((v) => (
+        <select name="records" value={b.records ?? ""} onChange={(e) => setRecords(e.target.value)} className={inputCls}>
+          <>
+            <option value="">-- اختر --</option>
+            {EXISTENCE.map((v) => (
             <option key={v} value={v}>
               {EXISTENCE_LABELS[v]}
             </option>
           ))}
+        </>
         </select>
         {b.records === "present" && (
           <div className="mt-2.5 space-y-2.5">
@@ -258,15 +281,18 @@ export function ReportFormFields({
               <label className={labelCls}>حالة السجلات</label>
               <select
                 name="recordsCompleteness"
-                value={b.recordsCompleteness ?? "complete"}
+                value={b.recordsCompleteness ?? ""}
                 onChange={(e) => setRecordsCompleteness(e.target.value)}
                 className={inputCls}
               >
-                {COMPLETENESS.map((v) => (
+                <>
+                  <option value="">-- اختر --</option>
+                  {COMPLETENESS.map((v) => (
                   <option key={v} value={v}>
                     {COMPLETENESS_LABELS[v]}
                   </option>
                 ))}
+              </>
               </select>
             </div>
             {b.recordsCompleteness === "incomplete" && (
@@ -286,12 +312,15 @@ export function ReportFormFields({
       </Section>
 
       <Section n={8} title="الخطة المالية">
-        <select name="financialPlan" value={b.financialPlan ?? "present"} onChange={(e) => setFinancialPlan(e.target.value)} className={inputCls}>
-          {EXISTENCE.map((v) => (
+        <select name="financialPlan" value={b.financialPlan ?? ""} onChange={(e) => setFinancialPlan(e.target.value)} className={inputCls}>
+          <>
+            <option value="">-- اختر --</option>
+            {EXISTENCE.map((v) => (
             <option key={v} value={v}>
               {EXISTENCE_LABELS[v]}
             </option>
           ))}
+        </>
         </select>
         {b.financialPlan === "absent" ? (
           <div className="mt-2.5">
@@ -309,15 +338,18 @@ export function ReportFormFields({
               <label className={labelCls}>مدى التنفيذ</label>
               <select
                 name="financialPlanExecution"
-                value={b.financialPlanExecution ?? "full"}
+                value={b.financialPlanExecution ?? ""}
                 onChange={(e) => set("financialPlanExecution", e.target.value as DailyReportBody["financialPlanExecution"])}
                 className={inputCls}
               >
-                {PLAN_EXECUTION.map((v) => (
+                <>
+                  <option value="">-- اختر --</option>
+                  {PLAN_EXECUTION.map((v) => (
                   <option key={v} value={v}>
                     {PLAN_EXECUTION_LABELS[v]}
                   </option>
                 ))}
+              </>
               </select>
             </div>
           )
@@ -339,6 +371,47 @@ export function ReportFormFields({
       <Section n={12} title="ملاحظات عامة">
         <textarea name="generalNotes" rows={3} value={b.generalNotes ?? ""} onChange={(e) => set("generalNotes", e.target.value)} className={inputCls} />
       </Section>
+
+      {/* بوابة الإرسال: لا يُرسل إلا باكتمال كل الحقول */}
+      <div className="pt-4 border-t border-slate-200 space-y-3">
+        {complete ? (
+          <p className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+            ✓ اكتمل التقرير — كل الحقول مملوءة، يمكنك الإرسال.
+          </p>
+        ) : (
+          <div className="text-xs bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+            <p className="font-semibold text-amber-900 mb-1">
+              لا يمكن الإرسال قبل اكتمال الحقول ({missing.length} ناقص):
+            </p>
+            <p className="text-amber-800 leading-relaxed">{missing.join("، ")}</p>
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="submit"
+            name="intent"
+            value="submitted"
+            disabled={pending || !complete}
+            title={complete ? undefined : "أكمل كل الحقول أولًا"}
+            className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition"
+          >
+            {pending ? "جارٍ الحفظ..." : "إرسال التقرير"}
+          </button>
+          <button
+            type="submit"
+            name="intent"
+            value="draft"
+            disabled={pending}
+            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 text-sm font-semibold rounded-xl transition"
+          >
+            حفظ كمسودة
+          </button>
+        </div>
+        <p className="text-[11px] text-slate-500">
+          يمكن حفظ مسودة في أي وقت، لكن الإرسال يتطلّب اكتمال كل الحقول.
+        </p>
+      </div>
     </div>
   );
 }
