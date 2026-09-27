@@ -15,13 +15,13 @@ export default async function HomePage() {
               أ
             </div>
             <div>
-              <div className="font-bold text-lg text-emerald-950">
+              <div className="font-black text-lg text-emerald-950">
                 الأزهر الشريف
               </div>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs font-bold text-slate-500">
                 قطاع المعاهد الأزهرية – الإدارة المركزية لرعاية الطلاب
               </div>
-              <div className="text-xs font-semibold text-emerald-700">
+              <div className="text-xs font-extrabold text-emerald-700">
                 الإدارة العامة للرعاية الرياضية
               </div>
             </div>

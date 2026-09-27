@@ -57,29 +57,29 @@ function SidebarContent({
     <div className="flex h-full flex-col bg-slate-900 text-slate-300">
       {/* سلسلة VIC: الأزهر الشريف في الأعلى ثم الإدارة العامة في الأسفل */}
       <div className="border-b border-slate-800/80 px-5 py-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-lg font-extrabold text-white shadow-lg shadow-emerald-900/40">
+        <div className="flex items-center gap-3.5">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-700 text-xl font-black text-white shadow-lg shadow-emerald-900/50">
             أ
           </div>
           <div className="min-w-0">
-            <p className="truncate text-base font-extrabold leading-tight text-white">
+            <p className="truncate text-lg font-black leading-tight text-white">
               الأزهر الشريف
             </p>
-            <p className="mt-0.5 truncate text-[11px] font-medium leading-tight text-slate-400">
+            <p className="mt-1 truncate text-sm font-bold leading-tight text-emerald-400">
               قطاع المعاهد الأزهرية
             </p>
           </div>
         </div>
 
-        <ul className="mt-3.5 space-y-1 border-t border-slate-800/80 pt-3.5 text-[11px] font-semibold leading-tight">
-          <li className="flex items-center gap-2 text-slate-400">
-            <span aria-hidden className="text-slate-600">
+        <ul className="mt-4 space-y-1.5 border-t border-slate-800/80 pt-4">
+          <li className="flex items-center gap-2.5 text-sm font-bold leading-snug text-slate-300">
+            <span aria-hidden className="text-base text-slate-600">
               –
             </span>
             الإدارة المركزية لرعاية الطلاب
           </li>
-          <li className="flex items-center gap-2 text-emerald-400">
-            <span aria-hidden className="text-emerald-600">
+          <li className="flex items-center gap-2.5 rounded-lg bg-emerald-500/10 px-2 py-1 text-sm font-extrabold leading-snug text-emerald-300 ring-1 ring-inset ring-emerald-500/25">
+            <span aria-hidden className="text-base text-emerald-500">
               –
             </span>
             الإدارة العامة للرعاية الرياضية
@@ -229,13 +229,13 @@ export function DashboardShell({
             ☰
           </button>
           <div className="min-w-0 text-center">
-            <p className="truncate text-base font-bold text-slate-900">
+            <p className="truncate text-base font-black text-slate-900">
               الأزهر الشريف
             </p>
-            <p className="truncate text-[11px] font-medium text-slate-500">
+            <p className="truncate text-[11px] font-bold text-slate-500">
               قطاع المعاهد الأزهرية – الإدارة المركزية لرعاية الطلاب
             </p>
-            <p className="truncate text-[11px] font-semibold text-emerald-600">
+            <p className="truncate text-[11px] font-extrabold text-emerald-600">
               الإدارة العامة للرعاية الرياضية
             </p>
           </div>
