@@ -55,18 +55,36 @@ function SidebarContent({
 
   return (
     <div className="flex h-full flex-col bg-slate-900 text-slate-300">
-      <div className="flex items-center gap-3 border-b border-slate-800/80 px-5 py-5">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-lg font-extrabold text-white shadow-lg shadow-emerald-900/40">
-          أ
+      {/* سلسلة VIC: الأزهر الشريف في الأعلى ثم الإدارة العامة في الأسفل */}
+      <div className="border-b border-slate-800/80 px-5 py-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-lg font-extrabold text-white shadow-lg shadow-emerald-900/40">
+            أ
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-base font-extrabold leading-tight text-white">
+              الأزهر الشريف
+            </p>
+            <p className="mt-0.5 truncate text-[11px] font-medium leading-tight text-slate-400">
+              قطاع المعاهد الأزهرية
+            </p>
+          </div>
         </div>
-        <div className="min-w-0">
-          <p className="truncate text-base font-extrabold leading-tight text-white">
-            رعاية الطلاب الرياضية
-          </p>
-          <p className="mt-0.5 text-xs font-semibold text-emerald-400">
-            الأزهر الشريف
-          </p>
-        </div>
+
+        <ul className="mt-3.5 space-y-1 border-t border-slate-800/80 pt-3.5 text-[11px] font-semibold leading-tight">
+          <li className="flex items-center gap-2 text-slate-400">
+            <span aria-hidden className="text-slate-600">
+              –
+            </span>
+            الإدارة المركزية لرعاية الطلاب
+          </li>
+          <li className="flex items-center gap-2 text-emerald-400">
+            <span aria-hidden className="text-emerald-600">
+              –
+            </span>
+            الإدارة العامة للرعاية الرياضية
+          </li>
+        </ul>
       </div>
 
       <div className="px-4 pt-4">
@@ -212,9 +230,14 @@ export function DashboardShell({
           </button>
           <div className="min-w-0 text-center">
             <p className="truncate text-base font-bold text-slate-900">
-              رعاية الطلاب الرياضية
+              الأزهر الشريف
             </p>
-            <p className="text-xs text-emerald-600">الأزهر الشريف</p>
+            <p className="truncate text-[11px] font-medium text-slate-500">
+              قطاع المعاهد الأزهرية – الإدارة المركزية لرعاية الطلاب
+            </p>
+            <p className="truncate text-[11px] font-semibold text-emerald-600">
+              الإدارة العامة للرعاية الرياضية
+            </p>
           </div>
           <ThemeToggle compact tone="light" />
         </header>

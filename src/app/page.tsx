@@ -19,6 +19,9 @@ export default async function HomePage() {
                 الأزهر الشريف
               </div>
               <div className="text-xs text-slate-500">
+                قطاع المعاهد الأزهرية – الإدارة المركزية لرعاية الطلاب
+              </div>
+              <div className="text-xs font-semibold text-emerald-700">
                 الإدارة العامة للرعاية الرياضية
               </div>
             </div>
