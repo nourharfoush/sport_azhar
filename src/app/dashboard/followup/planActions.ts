@@ -12,7 +12,7 @@ import { MonthlyVisit } from "@/models/MonthlyVisit";
 import { DailyReport } from "@/models/DailyReport";
 import { VISIT_TYPES, type SessionUser, type VisitType } from "@/types";
 import { isPlanManager, supervisedRolesFor } from "./planScope";
-import { missingReportFields } from "./reportRules";
+import { missingReportFields, submitWindow } from "./reportRules";
 import {
   ATTENDANCE,
   COMPLETENESS,
@@ -375,7 +375,12 @@ export async function saveDailyReportAction(
   const body = parseReportBody(formData);
 
   if (isSubmit) {
-    // التحقق في السيرفر لا يكتفي بتعطيل الزر في العميل
+    // 1) القيد الزمني: الإرسال في يوم المتابعة فقط (بتوقيت مصر)
+    const win = submitWindow(visit.date);
+    if (!win.allowed) {
+      return { success: false, error: win.message };
+    }
+    // 2) التحقق من اكتمال الحقول
     const inst = await Institute.findById(visit.institute).select("type");
     const missing = missingReportFields(body, inst?.type ?? "مشترك");
     if (missing.length) {
@@ -403,5 +408,6 @@ export async function saveDailyReportAction(
   revalidatePath("/dashboard/followup");
   return { success: true };
 }
+
 
 

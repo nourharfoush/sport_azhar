@@ -23,6 +23,59 @@ export interface ReportFieldRule {
   format: (b: DailyReportBody) => string;
 }
 
+/** توقيت مصر — الخادم قد يكون UTC (Vercel) فلا يصلح الاعتماد على توقيته. */
+export const CAIRO_TZ = "Africa/Cairo";
+
+/** مفتاح اليوم بصيغة YYYY-MM-DD بتوقيت مصر. */
+export function dayKey(d: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: CAIRO_TZ }).format(d);
+}
+
+/** اليوم الحالي بتوقيت مصر. */
+export function todayKey(): string {
+  return dayKey(new Date());
+}
+
+/** عدد الأيام بين اليوم الحالي ويوم الموعد (موجب = الموعد قادم). */
+export function daysUntil(visitDate: string | Date): number {
+  const target = dayKey(new Date(visitDate));
+  const now = todayKey();
+  // كلاهما بصيغة YYYY-MM-DD فيكفي طرح الطابعين زمنيين
+  return (
+    (Date.parse(`${target}T00:00:00Z`) - Date.parse(`${now}T00:00:00Z`)) / 86400000
+  );
+}
+
+export interface SubmitWindow {
+  allowed: boolean;
+  message: string;
+}
+
+/** هل يُسمح بالإرسال الآن؟ (يوميوم فقط: لا قبله ولا بعده) */
+export function submitWindow(visitDate: string | Date): SubmitWindow {
+  const diff = daysUntil(visitDate);
+  if (diff === 0) {
+    return { allowed: true, message: "يمكن الإرسال — اليوم هو يوم المتابعة." };
+  }
+  if (diff > 0) {
+    return {
+      allowed: false,
+      message:
+        diff === 1
+          ? "لا يمكن الإرسال قبل يوم المتابعة (غدًا)."
+          : `لا يمكن الإرسال قبل يوم المتابعة (بعد ${diff} أيام).`,
+    };
+  }
+  const late = Math.abs(diff);
+  return {
+    allowed: false,
+    message:
+      late === 1
+        ? "انتهى موعد الإرسال — يوم المتابعة كان أمس."
+        : `انتهى موعد الإرسال — مضى على يوم المتابعة ${late} أيام.`,
+  };
+}
+
 const isEmpty = (v: unknown) =>
   v === undefined || v === null || (typeof v === "string" && v.trim() === "");
 

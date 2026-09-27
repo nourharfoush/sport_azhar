@@ -14,7 +14,7 @@ import {
   PLAN_EXECUTION_LABELS,
   type DailyReportBody,
 } from "@/types";
-import { missingReportFields } from "./reportRules";
+import { missingReportFields, submitWindow } from "./reportRules";
 
 /** عنوان قسم داخل النموذج. */
 function Section({
@@ -55,16 +55,20 @@ export function ReportFormFields({
   instituteType,
   body,
   pending,
+  visitDate,
 }: {
   instituteName: string;
   instituteType: string;
   body: DailyReportBody;
   pending: boolean;
+  visitDate: string;
 }) {
   const [b, setB] = useState<DailyReportBody>(body ?? {});
   const isMixed = instituteType === "مشترك";
   const missing = missingReportFields(b, instituteType);
   const complete = missing.length === 0;
+  const window = submitWindow(visitDate);
+  const canSubmit = complete && window.allowed;
 
   const set = <K extends keyof DailyReportBody>(k: K, v: DailyReportBody[K]) =>
     setB((prev) => ({ ...prev, [k]: v }));
@@ -372,11 +376,19 @@ export function ReportFormFields({
         <textarea name="generalNotes" rows={3} value={b.generalNotes ?? ""} onChange={(e) => set("generalNotes", e.target.value)} className={inputCls} />
       </Section>
 
-      {/* بوابة الإرسال: لا يُرسل إلا باكتمال كل الحقول */}
+      {/* بوابة الإرسال: نفس يوم المتابعة + اكتمال كل الحقول */}
       <div className="pt-4 border-t border-slate-200 space-y-3">
-        {complete ? (
+        {!window.allowed ? (
+          <div className="text-xs bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">
+            <p className="font-semibold text-rose-900 mb-1">إرسال التقرير مقصور على يوم المتابعة</p>
+            <p className="text-rose-800 leading-relaxed">{window.message}</p>
+            <p className="text-rose-700 mt-1">
+              يمكنك حفظ مسودة الآن، وإرسالها في يوم الموعد.
+            </p>
+          </div>
+        ) : complete ? (
           <p className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
-            ✓ اكتمل التقرير — كل الحقول مملوءة، يمكنك الإرسال.
+            ✓ {window.message} — كل الحقول مكتملة، يمكنك الإرسال.
           </p>
         ) : (
           <div className="text-xs bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
@@ -392,8 +404,8 @@ export function ReportFormFields({
             type="submit"
             name="intent"
             value="submitted"
-            disabled={pending || !complete}
-            title={complete ? undefined : "أكمل كل الحقول أولًا"}
+            disabled={pending || !canSubmit}
+            title={canSubmit ? undefined : "التقرير يُرسل في يوم المتابعة فقط وبكامل الحقول"}
             className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition"
           >
             {pending ? "جارٍ الحفظ..." : "إرسال التقرير"}
@@ -409,12 +421,13 @@ export function ReportFormFields({
           </button>
         </div>
         <p className="text-[11px] text-slate-500">
-          يمكن حفظ مسودة في أي وقت، لكن الإرسال يتطلّب اكتمال كل الحقول.
+          الإرسال متاح في يوم المتابعة فقط، ويتطلّب اكتمال كل الحقول. الحفظ كمسودة متاح دائمًا.
         </p>
       </div>
     </div>
   );
 }
+
 
 
 

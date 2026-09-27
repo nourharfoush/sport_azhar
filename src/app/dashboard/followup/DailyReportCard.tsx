@@ -364,6 +364,7 @@ export function DailyReportCard({
               instituteType={visit.instituteType}
               body={visit.body ?? {}}
               pending={saving}
+              visitDate={visit.date}
             />
             {saveState?.error && (
               <p className="text-xs text-rose-700">{saveState.error}</p>
@@ -374,6 +375,7 @@ export function DailyReportCard({
     </div>
   );
 }
+
 
 
 
