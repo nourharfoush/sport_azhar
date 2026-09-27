@@ -5,8 +5,29 @@ import { Administration } from "@/models/Administration";
 import { Institute } from "@/models/Institute";
 import { Event, type IEvent } from "@/models/Event";
 import { FollowUp } from "@/models/FollowUp";
+import { News } from "@/models/News";
+import { buildNewsFilter, canManageNews } from "@/lib/rbac";
+
 import { buildEventFilter } from "@/lib/rbac";
 import type { SessionUser } from "@/types";
+
+/** استخراج المعرف من قيمة قد تكون مُعمَّرة (populated) أو ObjectId نصي. */
+export function refId(value: unknown): string | null {
+  if (!value) return null;
+  if (typeof value === "object" && value !== null && "_id" in value) {
+    return String((value as { _id: unknown })._id);
+  }
+  return String(value);
+}
+
+/** استخراج الاسم من قيمة مُعمَّرة. */
+export function refName(value: unknown): string | null {
+  if (value && typeof value === "object" && "name" in value) {
+    const name = (value as { name?: unknown }).name;
+    return name ? String(name) : null;
+  }
+  return null;
+}
 
 /** إرجاع معرفات الإدارات التي يراها المستخدم حسب مستواه (null = بلا قيد). */
 export async function getScopedAdministrationIds(
@@ -40,10 +61,12 @@ export async function getScopedInstitutes(user: SessionUser) {
   return Institute.find({ administration: { $in: adminIds } }).lean();
 }
 
-/** الفعاليات المرئية للمستخدم مع عدّادات المتابعة. */
+/** الفعاليات المرئية للمستخدم مع عدّادات المتابعة وأسماء النطاق. */
 export async function getVisibleEvents(user: SessionUser) {
   await dbConnect();
   const events = await Event.find(buildEventFilter(user))
+    .populate("region", "name")
+    .populate("administration", "name")
     .sort({ createdAt: -1 })
     .lean();
 
@@ -58,6 +81,24 @@ export async function getVisibleEvents(user: SessionUser) {
     }),
   );
 }
+
+/**
+ * الأخبار والتعميمات المرئية للمستخدم حسب نطاقه.
+ * (المسودات تظهر لأصحاب الصلاحيات فقط، والمعهد يرى المنشور فقط.)
+ */
+export async function getVisibleNews(user: SessionUser) {
+  await dbConnect();
+  const filter: Record<string, unknown> = { ...buildNewsFilter(user) };
+  if (!canManageNews(user)) {
+    filter.published = true;
+  }
+  return News.find(filter)
+    .populate("region", "name")
+    .populate("administration", "name")
+    .sort({ isPinned: -1, createdAt: -1 })
+    .lean();
+}
+
 
 /** المعاهد المستهدفة بفعالية حسب نطاقها. */
 export async function resolveTargetInstituteIds(event: IEvent) {

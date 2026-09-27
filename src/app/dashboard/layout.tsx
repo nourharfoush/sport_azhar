@@ -58,6 +58,12 @@ export default async function DashboardLayout({
             🏆 الفعاليات والمسابقات
           </Link>
           <Link
+            href="/dashboard/news"
+            className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition"
+          >
+            📰 الأخبار والتعميمات
+          </Link>
+          <Link
             href="/dashboard/followup"
             className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition"
           >

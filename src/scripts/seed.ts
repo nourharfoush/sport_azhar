@@ -6,6 +6,7 @@ import { Institute } from "../models/Institute";
 import { User } from "../models/User";
 import { Event } from "../models/Event";
 import { FollowUp } from "../models/FollowUp";
+import { News } from "../models/News";
 import regionsData from "./regions-data.json";
 
 
@@ -56,6 +57,7 @@ async function run() {
     User.deleteMany({}),
     Event.deleteMany({}),
     FollowUp.deleteMany({}),
+    News.deleteMany({}),
   ]);
 
   const passwordHash = await bcrypt.hash("azhar123", 10);
@@ -75,7 +77,11 @@ async function run() {
       .replace(/ى/g, "ي")
       .trim();
 
-  const allAdminDocs: Array<{ name: string; code: string; region: any }> = [];
+  const allAdminDocs: Array<{
+    name: string;
+    code: string;
+    region: mongoose.Types.ObjectId;
+  }> = [];
 
   for (const [rawRegionName, adminNames] of Object.entries(regionsData)) {
     const regionDoc = createdRegions.find((r) => {
@@ -223,6 +229,45 @@ async function run() {
     teamSize: 0,
     updatedBy: generalUser._id,
   });
+
+  // 7. الأخبار والتعميمات على المستويات الثلاثة
+  await News.create([
+    {
+      title: "انطلاق بطولة الجمهورية الأزهرية لكرة القدم للمرحلة الثانوية",
+      content:
+        "تعلن الإدارة العامة للرعاية الرياضية عن بدء التصفيات التمهيدية لبطولة الجمهورية لكرة القدم للمرحلة الثانوية بجميع المناطق الأزهرية، على أن تُرسل كشوف المشاركين خلال أسبوعين من تاريخ التعميم.",
+      category: "announcement",
+      scope: "general",
+      isPinned: true,
+      published: true,
+      authorRole: "general",
+      createdBy: generalUser._id,
+    },
+    {
+      title: "نتائج تصفيات منطقة القاهرة الأزهرية في كرة الطائرة",
+      content:
+        "أسفرت تصفيات منطقة القاهرة الأزهرية في كرة الطائرة للمرحلة الإعدادية عن تأهل أربعة معاهد للدور النهائي، وقد أشادت اللجنة الفنية بمستوى التنظيم والروح الرياضية للمشاركين.",
+      category: "sports_report",
+      scope: "region",
+      region: cairo._id,
+      published: true,
+      authorRole: "region",
+      createdBy: generalUser._id,
+    },
+    {
+      title: "تعميم بشأن مواعيد تدريبات معاهد إدارة مدينة نصر",
+      content:
+        "تُنظَّم التدريبات الأسبوعية لمعاهد إدارة مدينة نصر التعليمية بمقر معهد مدينة نصر النموذجي، مع ضرورة التزام المشرف الرياضي بتسجيل الحضور في منظومة المتابعة.",
+      category: "decision",
+      scope: "administration",
+      region: cairo._id,
+      administration: nasrAdmin._id,
+      published: true,
+      authorRole: "administration",
+      createdBy: generalUser._id,
+    },
+  ]);
+
 
   console.log("✓ تم إدخال البيانات التجريبية بنجاح!");
   console.log("-----------------------------------------");

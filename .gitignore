@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# uploaded files (news images)
+/public/uploads/*
+!/public/uploads/news/
+/public/uploads/news/*
+!/public/uploads/news/.gitkeep

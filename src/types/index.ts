@@ -76,3 +76,21 @@ export interface SessionUser {
   administrationId: string | null;
   instituteId: string | null;
 }
+
+// تصنيفات الأخبار والتعميمات
+export const NEWS_CATEGORIES = [
+  "news", // خبر رياضي
+  "announcement", // إعلان وتنبيه
+  "decision", // قرار وزاري / إداري
+  "sports_report", // تقرير وبطولات
+] as const;
+
+export type NewsCategory = (typeof NEWS_CATEGORIES)[number];
+
+export const NEWS_CATEGORY_LABELS: Record<NewsCategory, string> = {
+  news: "خبر رياضي",
+  announcement: "إعلان وتنبيه",
+  decision: "قرار وزاري / إداري",
+  sports_report: "تقرير نتائج وبطولات",
+};
+
