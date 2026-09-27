@@ -1,4 +1,4 @@
-import { EventStatus } from "@/types";
+import { EventStatus, EventScope } from "@/types";
 
 export interface EventItem {
   _id: string;
@@ -6,7 +6,7 @@ export interface EventItem {
   sport: string;
   season: string;
   description?: string;
-  scope: "general" | "region" | "administration";
+  scope: EventScope;
   region: string | null;
   regionName: string | null;
   administration: string | null;

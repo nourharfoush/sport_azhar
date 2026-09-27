@@ -69,19 +69,6 @@ export default function LoginPage() {
             {isPending ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}
           </button>
         </form>
-
-        <div className="mt-8 pt-6 border-t border-slate-200">
-          <p className="text-xs font-semibold text-slate-600 mb-2">
-            حسابات تجريبية للمستويات الأربعة (كلمة المرور:{" "}
-            <code className="text-emerald-700 font-mono">azhar123</code>):
-          </p>
-          <div className="space-y-1 text-xs text-slate-500 font-mono bg-slate-50 p-3 rounded-xl border border-slate-200" dir="ltr">
-            <div>الإدارة العامة: general@azhar.edu.eg</div>
-            <div>المنطقة: cairo.region@azhar.edu.eg</div>
-            <div>الإدارة التعليمية: nasr.admin@azhar.edu.eg</div>
-            <div>المعهد: model.institute@azhar.edu.eg</div>
-          </div>
-        </div>
       </div>
     </div>
   );

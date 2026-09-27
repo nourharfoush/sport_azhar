@@ -1,10 +1,22 @@
 import { getSession } from "@/lib/auth";
+import { dbConnect } from "@/lib/db";
+import { Administration } from "@/models/Administration";
 import { getVisibleEvents, refId, refName } from "@/lib/data";
 import { EventList } from "./EventList";
 
 export default async function EventsPage() {
   const session = (await getSession())!;
   const rawEvents = await getVisibleEvents(session);
+
+  // إدارات المنطقة الحالية (تُستخدم لدور المنطقة عند إنشاء تصفيات إدارية)
+  let administrations: { _id: string; name: string }[] = [];
+  if (session.role === "region" && session.regionId) {
+    await dbConnect();
+    const admins = await Administration.find({ region: session.regionId })
+      .sort({ name: 1 })
+      .lean();
+    administrations = admins.map((a) => ({ _id: String(a._id), name: a.name }));
+  }
 
   // تحويل البيانات لـ JSON safe props
   const events = rawEvents.map((e) => ({
@@ -36,7 +48,13 @@ export default async function EventsPage() {
         </p>
       </div>
 
-      <EventList events={events} userRole={session.role} userRegionId={session.regionId} userAdminId={session.administrationId} />
+      <EventList
+        events={events}
+        userRole={session.role}
+        userRegionId={session.regionId}
+        userAdminId={session.administrationId}
+        administrations={administrations}
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { EVENT_LABELS } from "@/types";
+import { EVENT_LABELS, EVENT_SCOPE_LABELS } from "@/types";
 import { EventItem } from "./types";
 import { publishEventAction } from "./actions";
 
@@ -53,13 +53,14 @@ export function EventTable({ events, canManageEvent, onEdit, onDelete }: Props) 
                 <span>الموسم: <strong>{e.season}</strong></span>
                 <span>•</span>
                 <span>
-                  النطاق:{" "}
+                  المستوى:{" "}
                   <strong className="text-slate-700">
-                    {e.scope === "general"
-                      ? "مركزي عام (كافة المناطق)"
-                      : e.scope === "region"
-                      ? `منطقة ${e.regionName ?? "أزهرية"}`
-                      : `إدارة ${e.administrationName ?? "تعليمية"}`}
+                    {EVENT_SCOPE_LABELS[e.scope] ?? e.scope}
+                    {e.scope === "region" && e.regionName
+                      ? ` — ${e.regionName}`
+                      : e.scope === "administration" && e.administrationName
+                        ? ` — ${e.administrationName}`
+                        : ""}
                   </strong>
                 </span>
                 {e.status === "draft" && (

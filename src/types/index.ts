@@ -44,6 +44,23 @@ export const EVENT_STATUSES = [
 
 export type EventStatus = (typeof EVENT_STATUSES)[number];
 
+// نطاقات المسابقة ومستويات البطولة
+export const EVENT_SCOPES = ["general", "region", "administration"] as const;
+
+export type EventScope = (typeof EVENT_SCOPES)[number];
+
+/**
+ * تسميات مستويات المسابقات:
+ * - general: نهائي الجمهورية (تضاف من الإدارة العامة فقط)
+ * - region: نهائي المنطقة (تضاف من المنطقة الأزهرية)
+ * - administration: تصفيات الإدارة التعليمية (تضاف من المنطقة أو الإدارة)
+ */
+export const EVENT_SCOPE_LABELS: Record<EventScope, string> = {
+  general: "نهائي الجمهورية",
+  region: "نهائي المنطقة",
+  administration: "تصفيات الإدارة التعليمية",
+};
+
 export const EVENT_LABELS: Record<EventStatus, string> = {
   draft: "مسودة",
   published: "معلنة",

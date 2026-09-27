@@ -1,4 +1,10 @@
-import { SPORTS } from "@/types";
+import { useState } from "react";
+import { SPORTS, EVENT_SCOPE_LABELS, type EventScope, type Role } from "@/types";
+
+interface AdministrationOption {
+  _id: string;
+  name: string;
+}
 
 interface Props {
   open: boolean;
@@ -6,10 +12,30 @@ interface Props {
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   loading: boolean;
   error: string | null;
+  /** دور المستخدم الحالي لتحديد مستويات المسابقة المتاحة */
+  userRole: Role;
+  /** إدارات المنطقة الحالية (تُستخدم لدور المنطقة عند اختيار تصفيات إدارية) */
+  administrations?: AdministrationOption[];
 }
 
-export function CreateEventModal({ open, onClose, onSubmit, loading, error }: Props) {
+export function CreateEventModal({
+  open,
+  onClose,
+  onSubmit,
+  loading,
+  error,
+  userRole,
+  administrations = [],
+}: Props) {
+  // مستوى المسابقة الافتراضي حسب الدور
+  const defaultScope: EventScope =
+    userRole === "general" ? "general" : userRole === "region" ? "region" : "administration";
+  const [scope, setScope] = useState<EventScope>(defaultScope);
+
   if (!open) return null;
+
+  /** المناطق/الإدارة يمكنها الاختيار بين نهائي المنطقة وتصفيات الإدارة */
+  const canChooseScope = userRole === "region";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
@@ -25,6 +51,72 @@ export function CreateEventModal({ open, onClose, onSubmit, loading, error }: Pr
           {error && (
             <div className="p-3 text-xs rounded-xl bg-rose-50 text-rose-700 border border-rose-200">
               {error}
+            </div>
+          )}
+
+          {/* مستوى المسابقة */}
+          {canChooseScope ? (
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                مستوى المسابقة *
+              </label>
+              <select
+                name="scope"
+                value={scope}
+                onChange={(e) => setScope(e.target.value as EventScope)}
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30"
+              >
+                <option value="region">{EVENT_SCOPE_LABELS.region}</option>
+                <option value="administration">{EVENT_SCOPE_LABELS.administration}</option>
+              </select>
+              <p className="text-[11px] text-slate-500 mt-1">
+                {scope === "region"
+                  ? "تُقام النهائيات بين المعاهد الفائزة من إدارات منطقتك وتظهر لكل المعاهد التابعة لها."
+                  : "تصفيات داخل إدارة تعليمية واحدة بمعهداتها."}
+              </p>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                مستوى المسابقة
+              </label>
+              <input
+                type="hidden"
+                name="scope"
+                value={defaultScope}
+              />
+              <div className="px-3.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-sm font-semibold text-emerald-800">
+                {EVENT_SCOPE_LABELS[defaultScope]}
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1">
+                {userRole === "general"
+                  ? "تُنشأ مسابقاتك بمستوى نهائي الجمهورية وتظهر لكافة المناطق الـ 27."
+                  : "تُنشأ مسابقاتك على مستوى إدارتك التعليمية."}
+              </p>
+            </div>
+          )}
+
+          {/* اختيار الإدارة عند تصفيات إدارات المنطقة */}
+          {canChooseScope && scope === "administration" && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                الإدارة التعليمية المستضيفة *
+              </label>
+              <select
+                name="administrationId"
+                required
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/30"
+              >
+                <option value="">-- اختر الإدارة التعليمية --</option>
+                {administrations.map((a) => (
+                  <option key={a._id} value={a._id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-slate-500 mt-1">
+                لا يمكن اختيار إدارة خارج منطقتك.
+              </p>
             </div>
           )}
 

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { getDashboardStats, getVisibleEvents, getVisibleNews } from "@/lib/data";
-import { ROLE_LABELS, EVENT_LABELS, NEWS_CATEGORY_LABELS } from "@/types";
+import { ROLE_LABELS, EVENT_LABELS, EVENT_SCOPE_LABELS, NEWS_CATEGORY_LABELS } from "@/types";
 
 export default async function DashboardPage() {
   const session = (await getSession())!;
@@ -113,12 +113,8 @@ export default async function DashboardPage() {
                     {e.title}
                   </div>
                   <div className="text-xs text-slate-500 mt-0.5">
-                    الرياضة: {e.sport} • الموسم: {e.season} • النطاق:{" "}
-                    {e.scope === "general"
-                      ? "عام لكافة الجمهورية"
-                      : e.scope === "region"
-                        ? "منطقة"
-                        : "إدارة"}
+                    الرياضة: {e.sport} • الموسم: {e.season} • المستوى:{" "}
+                    {EVENT_SCOPE_LABELS[e.scope] ?? e.scope}
                   </div>
                 </div>
 

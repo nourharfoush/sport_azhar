@@ -8,10 +8,9 @@ import { Event } from "../models/Event";
 import { FollowUp } from "../models/FollowUp";
 import { News } from "../models/News";
 import regionsData from "./regions-data.json";
+import { loadEnvLocal } from "./load-env";
 
-
-const MONGODB_URI =
-  process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017/azhar_sports";
+const MONGODB_URI_FALLBACK = "mongodb://127.0.0.1:27017/azhar_sports";
 
 // الـ 27 محافظة مصرية والمناطق الأزهرية الرسمية المقابلة لها
 const EGYPT_REGIONS = [
@@ -46,6 +45,8 @@ const EGYPT_REGIONS = [
 
 
 async function run() {
+  await loadEnvLocal();
+  const MONGODB_URI = process.env.MONGODB_URI ?? MONGODB_URI_FALLBACK;
   console.log("الاتصال بقاعدة البيانات...");
   await mongoose.connect(MONGODB_URI);
 

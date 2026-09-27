@@ -45,3 +45,6 @@ next-env.d.ts
 !/public/uploads/news/
 /public/uploads/news/*
 !/public/uploads/news/.gitkeep
+
+# بيانات دخول حسابات المناطق (حساسة - لا تُرفع على Git)
+/src/scripts/region-credentials.txt

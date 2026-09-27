@@ -6,8 +6,69 @@ import { getSession } from "@/lib/auth";
 import { Event } from "@/models/Event";
 import { FollowUp } from "@/models/FollowUp";
 import { ensureFollowUpsForEvent } from "@/lib/data";
-import { canManageScopedItem, scopedOwnershipForRole } from "@/lib/rbac";
-import { SPORTS, FOLLOWUP_STATUSES, EVENT_STATUSES, type EventStatus, type FollowupStatus } from "@/types";
+import { canManageScopedItem } from "@/lib/rbac";
+import { Administration } from "@/models/Administration";
+import { SPORTS, FOLLOWUP_STATUSES, EVENT_STATUSES, type EventStatus, type FollowupStatus, type EventScope } from "@/types";
+
+/**
+ * تحديد نطاق (مستوى) المسابقة الجديدة حسب دور المستخدم مع التحقق من الصلاحية:
+ * - الإدارة العامة  => نهائي الجمهورية (general) فقط.
+ * - المنطقة الأزهرية => نهائي منطقتها (region) أو تصفيات إحدى إداراتها (administration).
+ * - الإدارة التعليمية => تصفيات إدارتها فقط (administration).
+ * يعيد كائن النطاق أو رسالة خطأ.
+ */
+async function resolveRequestedScope(
+  session: { role: string; regionId: string | null; administrationId: string | null },
+  formData: FormData,
+): Promise<{ scope: EventScope; region: string | null; administration: string | null } | { error: string }> {
+  const requested = String(formData.get("scope") ?? "").trim() as EventScope | "";
+
+  if (session.role === "general") {
+    return { scope: "general", region: null, administration: null };
+  }
+
+  if (session.role === "region") {
+    if (!session.regionId) {
+      return { error: "حسابك غير مرتبط بأي منطقة أزهرية." };
+    }
+    // لا يُسمح للمنطقة بإنشاء مسابقات مطلقة خارج نطاق منطقتها
+    if (requested && requested !== "region" && requested !== "administration") {
+      return { error: "لا تملك صلاحية إنشاء نهائي الجمهورية." };
+    }
+    if (requested === "administration") {
+      const administrationId = String(formData.get("administrationId") ?? "").trim();
+      if (!administrationId) {
+        return { error: "اختر الإدارة التعليمية التي ستُقام لها تصفيات." };
+      }
+      const admin = await Administration.findById(administrationId).select("_id region");
+      if (!admin) {
+        return { error: "الإدارة التعليمية غير موجودة." };
+      }
+      if (String(admin.region) !== String(session.regionId)) {
+        return { error: "لا يمكنك إنشاء تصفيات لإدارة خارج منطقتك." };
+      }
+      return { scope: "administration", region: session.regionId, administration: String(admin._id) };
+    }
+    // الافتراضي للمنطقة: نهائي منطقتها
+    return { scope: "region", region: session.regionId, administration: null };
+  }
+
+  if (session.role === "administration") {
+    if (!session.administrationId) {
+      return { error: "حسابك غير مرتبط بأي إدارة تعليمية." };
+    }
+    if (requested && requested !== "administration") {
+      return { error: "لا تملك صلاحية إنشاء مسابقات خارج إدارتك." };
+    }
+    return {
+      scope: "administration",
+      region: session.regionId,
+      administration: session.administrationId,
+    };
+  }
+
+  return { error: "غير مصرح لك بإنشاء فعاليات." };
+}
 
 /** إنشاء فعالية/مسابقة حسب مستوى المستخدم. */
 export async function createEventAction(formData: FormData): Promise<{ success: boolean; error?: string }> {
@@ -30,10 +91,15 @@ export async function createEventAction(formData: FormData): Promise<{ success: 
     return { success: false, error: "اللعبة الرياضية غير صالحة." };
   }
 
-  // النطاق يُستنتج من مستوى المستخدم (منطق موحّد مع الأخبار)
-  const { scope, region, administration } = scopedOwnershipForRole(session);
-
   await dbConnect();
+
+  // تحديد النطاق (مستوى المسابقة) حسب الدور والتحقق من الصلاحية
+  const ownership = await resolveRequestedScope(session, formData);
+  if ("error" in ownership) {
+    return { success: false, error: ownership.error };
+  }
+  const { scope, region, administration } = ownership;
+
   try {
     await Event.create({
       title,

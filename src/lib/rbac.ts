@@ -13,6 +13,8 @@ export function buildEventFilter(user: SessionUser): Record<string, unknown> {
         $or: [
           { scope: "general" },
           { scope: "region", region: user.regionId },
+          // مسابقاته الداخلية: تصفيات الإدارات التعليمية التابعة لمنطقته
+          { scope: "administration", region: user.regionId },
         ],
       };
     case "administration":
