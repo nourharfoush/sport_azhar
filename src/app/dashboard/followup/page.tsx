@@ -10,7 +10,7 @@ import { MonthlyPlanBuilder } from "./MonthlyPlanBuilder";
 import { DailyReportCard, type VisitRow } from "./DailyReportCard";
 import { supervisedRolesFor } from "./planScope";
 import { MONTH_LABELS, type DailyReportStatus, type VisitType } from "@/types";
-import { refName } from "@/lib/data";
+import { refId, refName } from "@/lib/data";
 
 /** الشهر الحالي بصيغة YYYY-MM. */
 function currentMonth(): string {
@@ -125,7 +125,8 @@ export default async function FollowUpPage() {
       _id: String(v._id),
       date: new Date(v.date).toISOString(),
       visitType: v.visitType as VisitType,
-      supervisorId: String(v.supervisor),
+      // populate يستبدل الـ ObjectId بكائن، فنستخرج المعرّف عبر refId
+      supervisorId: refId(v.supervisor) ?? "",
       supervisorName: refName(v.supervisor) ?? "—",
       instituteName: refName(v.institute) ?? "—",
       administrationName: refName(v.administration) ?? "—",
