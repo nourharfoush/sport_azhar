@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { useState } from "react";
 import {
   YES_NO,
   YES_NO_LABELS,
@@ -12,11 +13,6 @@ import {
   PLAN_EXECUTION,
   PLAN_EXECUTION_LABELS,
   type DailyReportBody,
-  type YesNo,
-  type Attendance,
-  type Existence,
-  type Completeness,
-  type PlanExecution,
 } from "@/types";
 
 /** عنوان قسم داخل النموذج. */
@@ -48,8 +44,10 @@ const labelCls = "block text-xs font-bold text-slate-700 mb-1.5";
 
 /**
  * نموذج تقرير المتابعة اليومي.
- * - اسم المعهد يظهر تلقائيًا (غير قابل للتعديل).
- * - حقول «مشترك» و«غير موجود» تظهر شرطًا حسب الاختيارات السابقة.
+ *
+ * الحقول مُتحكَّم بها (controlled): كل قائمة تُعيد الرسم فورًا
+ * فتظهر الحقول التابعة لها أو تختفي مباشرةً عند تغيير الاختيار.
+ * (لو استُخدم defaultValue لتقيّمت الشرط مرة واحدة عند التحميل فقط.)
  */
 export function ReportFormFields({
   instituteName,
@@ -60,13 +58,55 @@ export function ReportFormFields({
   instituteType: string;
   body: DailyReportBody;
 }) {
-  const b = body ?? {};
+  const [b, setB] = useState<DailyReportBody>(body ?? {});
   const isMixed = instituteType === "مشترك";
 
-  const yn = (v: YesNo | undefined) => v ?? "no";
-  const att = (v: Attendance | undefined) => v ?? "present";
-  const ex = (v: Existence | undefined) => v ?? "present";
-  const comp = (v: Completeness | undefined) => v ?? "complete";
+  const set = <K extends keyof DailyReportBody>(k: K, v: DailyReportBody[K]) =>
+    setB((prev) => ({ ...prev, [k]: v }));
+
+  // اختيار «لا» ينظّف الحقل التابع حتى لا يبقى محفوظًا من قبل
+  const setSeconded = (v: string) => {
+    setB((prev) => {
+      const next = { ...prev, seconded: v as DailyReportBody["seconded"] };
+      if (v !== "yes") delete next.secondedInstituteName;
+      return next;
+    });
+  };
+  const setRecordBook = (v: string) => {
+    setB((prev) => {
+      const next = { ...prev, recordBook: v as DailyReportBody["recordBook"] };
+      if (v !== "present") delete next.recordBookCompleteness;
+      return next;
+    });
+  };
+  const setRecords = (v: string) => {
+    setB((prev) => {
+      const next = { ...prev, records: v as DailyReportBody["records"] };
+      if (v !== "present") {
+        delete next.recordsCompleteness;
+        delete next.missingRecordsNames;
+      }
+      return next;
+    });
+  };
+  const setRecordsCompleteness = (v: string) => {
+    setB((prev) => {
+      const next = {
+        ...prev,
+        recordsCompleteness: v as DailyReportBody["recordsCompleteness"],
+      };
+      if (v !== "incomplete") delete next.missingRecordsNames;
+      return next;
+    });
+  };
+  const setFinancialPlan = (v: string) => {
+    setB((prev) => {
+      const next = { ...prev, financialPlan: v as DailyReportBody["financialPlan"] };
+      if (v === "absent") delete next.financialPlanExecution;
+      else if (v === "present") delete next.financialPlanAbsentReason;
+      return next;
+    });
+  };
 
   return (
     <div className="space-y-4 text-right">
@@ -84,7 +124,7 @@ export function ReportFormFields({
               type="number"
               name="studentCount"
               min="0"
-              defaultValue={b.studentCount ?? ""}
+              value={b.studentCount ?? ""} onChange={(e) => set("studentCount", e.target.value === "" ? undefined : Number(e.target.value))}
               className={inputCls}
             />
           </div>
@@ -96,7 +136,7 @@ export function ReportFormFields({
                   type="number"
                   name="boysCount"
                   min="0"
-                  defaultValue={b.boysCount ?? ""}
+                  value={b.boysCount ?? ""} onChange={(e) => set("boysCount", e.target.value === "" ? undefined : Number(e.target.value))}
                   className={inputCls}
                 />
               </div>
@@ -106,7 +146,7 @@ export function ReportFormFields({
                   type="number"
                   name="girlsCount"
                   min="0"
-                  defaultValue={b.girlsCount ?? ""}
+                  value={b.girlsCount ?? ""} onChange={(e) => set("girlsCount", e.target.value === "" ? undefined : Number(e.target.value))}
                   className={inputCls}
                 />
               </div>
@@ -121,7 +161,7 @@ export function ReportFormFields({
       </Section>
 
       <Section n={2} title="معلّم التربية الرياضية">
-        <select name="peTeacherPresent" defaultValue={att(b.peTeacherPresent)} className={inputCls}>
+        <select name="peTeacherPresent" value={b.peTeacherPresent ?? "present"} onChange={(e) => set("peTeacherPresent", e.target.value as DailyReportBody["peTeacherPresent"])} className={inputCls}>
           {ATTENDANCE.map((a) => (
             <option key={a} value={a}>
               {ATTENDANCE_LABELS[a]}
@@ -131,7 +171,7 @@ export function ReportFormFields({
       </Section>
 
       <Section n={3} title="الانتداب لمعهد آخر">
-        <select name="seconded" defaultValue={yn(b.seconded)} className={inputCls}>
+        <select name="seconded" value={b.seconded ?? "no"} onChange={(e) => setSeconded(e.target.value)} className={inputCls}>
           {YES_NO.map((v) => (
             <option key={v} value={v}>
               {YES_NO_LABELS[v]}
@@ -144,7 +184,7 @@ export function ReportFormFields({
             <input
               type="text"
               name="secondedInstituteName"
-              defaultValue={b.secondedInstituteName ?? ""}
+              value={b.secondedInstituteName ?? ""} onChange={(e) => set("secondedInstituteName", e.target.value)}
               placeholder="اسم المعهد الآخر"
               className={inputCls}
             />
@@ -157,13 +197,13 @@ export function ReportFormFields({
           type="number"
           name="peLessonsCount"
           min="0"
-          defaultValue={b.peLessonsCount ?? ""}
+          value={b.peLessonsCount ?? ""} onChange={(e) => set("peLessonsCount", e.target.value === "" ? undefined : Number(e.target.value))}
           className={inputCls}
         />
       </Section>
 
       <Section n={5} title="الالتزام بالزي الرياضي">
-        <select name="uniformCompliant" defaultValue={yn(b.uniformCompliant)} className={inputCls}>
+        <select name="uniformCompliant" value={b.uniformCompliant ?? "no"} onChange={(e) => set("uniformCompliant", e.target.value as DailyReportBody["uniformCompliant"])} className={inputCls}>
           {YES_NO.map((v) => (
             <option key={v} value={v}>
               {YES_NO_LABELS[v]}
@@ -173,7 +213,7 @@ export function ReportFormFields({
       </Section>
 
       <Section n={6} title="الكشكول">
-        <select name="recordBook" defaultValue={ex(b.recordBook)} className={inputCls}>
+        <select name="recordBook" value={b.recordBook ?? "present"} onChange={(e) => setRecordBook(e.target.value)} className={inputCls}>
           {EXISTENCE.map((v) => (
             <option key={v} value={v}>
               {EXISTENCE_LABELS[v]}
@@ -185,7 +225,13 @@ export function ReportFormFields({
             <label className={labelCls}>حالة الكشكول</label>
             <select
               name="recordBookCompleteness"
-              defaultValue={comp(b.recordBookCompleteness)}
+              value={b.recordBookCompleteness ?? "complete"}
+              onChange={(e) =>
+                set(
+                  "recordBookCompleteness",
+                  e.target.value as DailyReportBody["recordBookCompleteness"],
+                )
+              }
               className={inputCls}
             >
               {COMPLETENESS.map((v) => (
@@ -199,7 +245,7 @@ export function ReportFormFields({
       </Section>
 
       <Section n={7} title="السجلان">
-        <select name="records" defaultValue={ex(b.records)} className={inputCls}>
+        <select name="records" value={b.records ?? "present"} onChange={(e) => setRecords(e.target.value)} className={inputCls}>
           {EXISTENCE.map((v) => (
             <option key={v} value={v}>
               {EXISTENCE_LABELS[v]}
@@ -212,7 +258,8 @@ export function ReportFormFields({
               <label className={labelCls}>حالة السجلين</label>
               <select
                 name="recordsCompleteness"
-                defaultValue={comp(b.recordsCompleteness)}
+                value={b.recordsCompleteness ?? "complete"}
+                onChange={(e) => setRecordsCompleteness(e.target.value)}
                 className={inputCls}
               >
                 {COMPLETENESS.map((v) => (
@@ -228,7 +275,7 @@ export function ReportFormFields({
                 <textarea
                   name="missingRecordsNames"
                   rows={2}
-                  defaultValue={b.missingRecordsNames ?? ""}
+                  value={b.missingRecordsNames ?? ""} onChange={(e) => set("missingRecordsNames", e.target.value)}
                   placeholder="مثال: سجل الحضور، سجل المتابعة"
                   className={inputCls}
                 />
@@ -239,7 +286,7 @@ export function ReportFormFields({
       </Section>
 
       <Section n={8} title="الخطة المالية">
-        <select name="financialPlan" defaultValue={ex(b.financialPlan)} className={inputCls}>
+        <select name="financialPlan" value={b.financialPlan ?? "present"} onChange={(e) => setFinancialPlan(e.target.value)} className={inputCls}>
           {EXISTENCE.map((v) => (
             <option key={v} value={v}>
               {EXISTENCE_LABELS[v]}
@@ -252,7 +299,7 @@ export function ReportFormFields({
             <textarea
               name="financialPlanAbsentReason"
               rows={2}
-              defaultValue={b.financialPlanAbsentReason ?? ""}
+              value={b.financialPlanAbsentReason ?? ""} onChange={(e) => set("financialPlanAbsentReason", e.target.value)}
               className={inputCls}
             />
           </div>
@@ -262,7 +309,8 @@ export function ReportFormFields({
               <label className={labelCls}>مدى التنفيذ</label>
               <select
                 name="financialPlanExecution"
-                defaultValue={(b.financialPlanExecution as PlanExecution | undefined) ?? "full"}
+                value={b.financialPlanExecution ?? "full"}
+                onChange={(e) => set("financialPlanExecution", e.target.value as DailyReportBody["financialPlanExecution"])}
                 className={inputCls}
               >
                 {PLAN_EXECUTION.map((v) => (
@@ -277,20 +325,24 @@ export function ReportFormFields({
       </Section>
 
       <Section n={9} title="الإيجابيات">
-        <textarea name="positives" rows={2} defaultValue={b.positives ?? ""} className={inputCls} />
+        <textarea name="positives" rows={2} value={b.positives ?? ""} onChange={(e) => set("positives", e.target.value)} className={inputCls} />
       </Section>
 
       <Section n={10} title="السلبيات">
-        <textarea name="negatives" rows={2} defaultValue={b.negatives ?? ""} className={inputCls} />
+        <textarea name="negatives" rows={2} value={b.negatives ?? ""} onChange={(e) => set("negatives", e.target.value)} className={inputCls} />
       </Section>
 
       <Section n={11} title="المقترحات">
-        <textarea name="suggestions" rows={2} defaultValue={b.suggestions ?? ""} className={inputCls} />
+        <textarea name="suggestions" rows={2} value={b.suggestions ?? ""} onChange={(e) => set("suggestions", e.target.value)} className={inputCls} />
       </Section>
 
       <Section n={12} title="ملاحظات عامة">
-        <textarea name="generalNotes" rows={3} defaultValue={b.generalNotes ?? ""} className={inputCls} />
+        <textarea name="generalNotes" rows={3} value={b.generalNotes ?? ""} onChange={(e) => set("generalNotes", e.target.value)} className={inputCls} />
       </Section>
     </div>
   );
 }
+
+
+
+
