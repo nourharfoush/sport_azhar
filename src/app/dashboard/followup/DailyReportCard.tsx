@@ -7,7 +7,7 @@ import {
   deleteVisitAction,
 } from "./planActions";
 import { ReportFormFields } from "./ReportForm";
-import { visibleReportFields } from "./reportRules";
+import { visibleReportFields, isMixedInstitute } from "./reportRules";
 import {
   DAILY_REPORT_STATUS_LABELS,
   VISIT_TYPES,
@@ -50,74 +50,161 @@ function fmtDate(iso: string): { weekday: string; date: string } {
  * - الموجّه: يفتح التقرير ويملؤه ثم يرسله.
  * - المدير: يعرض حالة التقرير فقط.
  */
-/** هل محتوى التقرير يحتوي أي قيمة؟ (لإخفاء الملخّص الفارغ) */
-
 /**
- * جدول عرض التقرير المُرسل (قراءة فقط) + زر طباعة.
- * يطبع التقرير وحده عبر CSS الطباعة في globals.css.
+ * ورقة تقرير كاملة بمقاس A4 — تُعرض على الشاشة كورقة وتُطبع كما هي.
+ * تتضمّن: ترويسة + بيانات الموعد + جدول الحقول + خانات التوقيع.
  */
-function ReportTable({
+function ReportSheet({
   instituteName,
+  instituteType,
+  administrationName,
+  regionName,
   visitDate,
   visitType,
   supervisorName,
   body,
 }: {
   instituteName: string;
+  instituteType: string;
+  administrationName: string;
+  regionName: string;
   visitDate: string;
   visitType: string;
   supervisorName: string;
   body: DailyReportBody;
 }) {
-  const fields = visibleReportFields(body ?? {}, "");
+  const isMixed = isMixedInstitute(instituteType);
+  const fields = visibleReportFields(body ?? {}, instituteType);
+  const d = new Date(visitDate);
+  const dateStr = Number.isNaN(d.getTime())
+    ? visitDate
+    : d.toLocaleDateString("ar-EG", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+
   return (
-    <div className="mt-4 pt-4 border-t border-slate-100 print-area">
-      <div className="flex items-center justify-between mb-2 print:hidden">
-        <p className="text-xs font-bold text-slate-700">بيانات التقرير</p>
+    <div className="mt-4 print:mt-0 print-area">
+      <div className="flex items-center justify-between mb-3 print:hidden">
+        <p className="text-xs font-bold text-slate-700">التقرير المُرسل</p>
         <button
           type="button"
           onClick={() => window.print()}
           className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
         >
-          🖨 طباعة التقرير
+          طباعة (A4)
         </button>
       </div>
 
-      <table className="w-full text-right border-collapse text-xs">
-        <thead className="hidden print:table-header-group">
-          <tr>
-            <th className="py-1 px-2">البند</th>
-            <th className="py-1 px-2">القيمة</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr className="border-b border-slate-200">
-            <th className="py-1.5 px-2 text-slate-600 font-semibold w-1/3">المعهد</th>
-            <td className="py-1.5 px-2 font-bold text-slate-900">{instituteName}</td>
-          </tr>
-          <tr className="border-b border-slate-200">
-            <th className="py-1.5 px-2 text-slate-600 font-semibold">الموجّه</th>
-            <td className="py-1.5 px-2 text-slate-800">{supervisorName}</td>
-          </tr>
-          <tr className="border-b border-slate-200">
-            <th className="py-1.5 px-2 text-slate-600 font-semibold">نوع الزيارة</th>
-            <td className="py-1.5 px-2 text-slate-800">{visitType}</td>
-          </tr>
-          <tr className="border-b border-slate-200">
-            <th className="py-1.5 px-2 text-slate-600 font-semibold">التاريخ</th>
-            <td className="py-1.5 px-2 text-slate-800">{visitDate}</td>
-          </tr>
-          {fields.map((f) => (
-            <tr key={f.key} className="border-b border-slate-200">
-              <th className="py-1.5 px-2 text-slate-600 font-semibold w-1/3">{f.label}</th>
-              <td className="py-1.5 px-2 text-slate-800 whitespace-pre-wrap">{f.format(body ?? {})}</td>
+      <div className="a4-sheet bg-white border border-slate-300 shadow-sm p-8 print:p-0 print:border-0 print:shadow-none">
+        <header className="text-center border-b-2 border-emerald-800 pb-3 mb-4 print:mb-3">
+          <p className="text-[11px] text-slate-600">الأزهر الشريف</p>
+          <h3 className="text-base font-extrabold text-slate-900 mt-0.5">
+            تقرير متابعة يومية
+          </h3>
+        </header>
+
+        <table className="w-full text-right border-collapse text-[11px] mb-4 print:mb-3">
+          <tbody>
+            <tr>
+              <th className="w-1/6 py-1.5 px-2 bg-slate-50 border border-slate-300 font-bold text-slate-700">
+                المعهد
+              </th>
+              <td className="py-1.5 px-2 border border-slate-300 font-semibold text-slate-900">
+                {instituteName}
+                {instituteType ? ` (${instituteType})` : ""}
+              </td>
             </tr>
-          ))}
-        </tbody>
-      </table>
+            <tr>
+              <th className="py-1.5 px-2 bg-slate-50 border border-slate-300 font-bold text-slate-700">
+                الإدارة / المنطقة
+              </th>
+              <td className="py-1.5 px-2 border border-slate-300 text-slate-800">
+                {administrationName || "—"} — {regionName || "—"}
+              </td>
+            </tr>
+            <tr>
+              <th className="w-1/6 py-1.5 px-2 bg-slate-50 border border-slate-300 font-bold text-slate-700">
+                الموجّه
+              </th>
+              <td className="py-1.5 px-2 border border-slate-300 text-slate-800">
+                {supervisorName || "—"}
+              </td>
+            </tr>
+            <tr>
+              <th className="py-1.5 px-2 bg-slate-50 border border-slate-300 font-bold text-slate-700">
+                نوع الزيارة
+              </th>
+              <td className="py-1.5 px-2 border border-slate-300 text-slate-800">
+                {visitType}
+              </td>
+            </tr>
+            <tr>
+              <th className="py-1.5 px-2 bg-slate-50 border border-slate-300 font-bold text-slate-700">
+                التاريخ
+              </th>
+              <td className="py-1.5 px-2 border border-slate-300 text-slate-800">
+                {dateStr}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table className="w-full text-right border-collapse text-[11px]">
+          <thead className="print:table-header-group">
+            <tr>
+              <th className="w-1/3 py-1.5 px-2 bg-emerald-800 text-white font-bold">
+                البند
+              </th>
+              <th className="py-1.5 px-2 bg-emerald-800 text-white font-bold">
+                البيان
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {fields.map((f, idx) => (
+              <tr key={f.key} className="print:break-inside-avoid">
+                <th
+                  className={`py-1.5 px-2 font-bold text-slate-700 border border-slate-300 ${
+                    idx % 2 === 0 ? "bg-slate-50" : "bg-white"
+                  }`}
+                >
+                  {f.label}
+                </th>
+                <td
+                  className={`py-1.5 px-2 text-slate-900 whitespace-pre-wrap border border-slate-300 ${
+                    idx % 2 === 0 ? "bg-slate-50" : "bg-white"
+                  }`}
+                >
+                  {f.format(body ?? {})}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="grid grid-cols-2 gap-8 mt-8 print:mt-6 text-[11px]">
+          <div className="text-center">
+            <p className="mb-8">الموجّه</p>
+            <div className="border-t border-slate-400" />
+          </div>
+          <div className="text-center">
+            <p className="mb-8">مدير الإدارة التعليمية</p>
+            <div className="border-t border-slate-400" />
+          </div>
+        </div>
+
+        {isMixed && (
+          <p className="mt-3 text-[10px] text-slate-500 text-center">
+            المعهد من النوع «مشترك» — لذلك يُسجَّل تفصيل عدد البنات والبنين.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
+
 
 export function DailyReportCard({
   visit,
@@ -251,9 +338,12 @@ export function DailyReportCard({
       )}
 
       {(locked || (isSupervisor && !open)) && (
-        <ReportTable
+        <ReportSheet
           instituteName={visit.instituteName}
-          visitDate={date}
+          instituteType={visit.instituteType}
+          administrationName={visit.administrationName}
+          regionName={visit.regionName}
+          visitDate={visit.date}
           visitType={VISIT_TYPE_LABELS[visit.visitType]}
           supervisorName={visit.supervisorName}
           body={visit.body}
