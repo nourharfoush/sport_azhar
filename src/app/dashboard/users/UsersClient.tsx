@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ActionModal } from "../entities/ActionModal";
-import { ROLE_LABELS, ROLES, type Role } from "@/types";
+import { ROLE_LABELS, ROLES, type Role, displayName } from "@/types";
 import {
   createUserAction,
   updateUserAction,
@@ -344,7 +344,7 @@ export function UsersClient({
                   return (
                     <tr key={u._id} className="hover:bg-slate-50/50 transition">
                       <td className="py-3.5 px-4 font-bold text-slate-900">
-                        {u.name}
+                        {displayName(u.name)}
                         {isSelf && (
                           <span className="mr-2 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
                             حسابك
@@ -506,7 +506,7 @@ export function UsersClient({
         <input type="hidden" name="id" value={deleteUser?._id || ""} />
         <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-sm space-y-2">
           <p className="font-bold">
-            هل تريد بالتأكيد حذف &ldquo;{deleteUser?.name}&rdquo;؟
+            هل تريد بالتأكيد حذف &ldquo;{displayName(deleteUser?.name)}&rdquo;؟
           </p>
           <p className="text-xs text-rose-700 leading-relaxed">
             سيتم إيقاف حسابه فورًا ولن يتمكن من تسجيل الدخول بالبريد{" "}

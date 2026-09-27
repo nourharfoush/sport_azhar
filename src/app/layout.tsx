@@ -49,6 +49,17 @@ const CLEAN_EXTENSION_ATTRS = `
 })();
 `;
 
+const THEME_SCRIPT = `
+(function() {
+  try {
+    var stored = localStorage.getItem('azhar-theme');
+    var dark = stored ? stored === 'dark'
+      : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.classList.toggle('dark', dark);
+  } catch (e) {}
+})();
+`;
+
 export default function RootLayout({
   children,
 }: {
@@ -56,6 +67,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ar" dir="rtl" className={cairo.variable} suppressHydrationWarning>
+      <head>
+        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body
         className="font-[family-name:var(--font-cairo)] min-h-screen bg-slate-50 text-slate-900 antialiased"
         suppressHydrationWarning

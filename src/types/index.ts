@@ -241,6 +241,57 @@ export interface SessionUser {
   instituteId: string | null;
 }
 
+/** الألقاب المعروفة التي تُحذف من بداية الاسم عند العرض */
+const NAME_TITLES = new Set([
+  "أ.د",
+  "ا.د",
+  "د.م",
+  "أ.م",
+  "د",
+  "أ",
+  "ا",
+  "م",
+  "ش",
+  "ك",
+  "كابتن",
+]);
+
+/** إزالة الفواصل الملحقة باللقب مثل: "أ.د/" أو "د.م." */
+function normalizeTitleToken(token: string): string {
+  return token
+    .replace(/^[/–—.\-:،]+/, "")
+    .replace(/[/–—.\-:،]+$/, "");
+}
+
+/**
+ * إزالة الألقاب العلمية/الأدبية من أسماء المستخدمين عند العرض.
+ * أمثلة: "أ.د/ مدير عام الرعاية الرياضية" -> "مدير عام الرعاية الرياضية"
+ *       "د.م. عبد الله محمد"              -> "عبد الله محمد"
+ *       "محمد بدون لقب"                    -> "محمد بدون لقب" (بدون تغيير)
+ */
+export function displayName(name?: string | null): string {
+  if (!name) return "";
+  const original = String(name).trim();
+  const parts = original.split(/\s+/);
+
+  // نتجاوز أقصى 3 رموز في البداية (أ.د/ د.م. ...)
+  let index = 0;
+  while (index < parts.length && index < 3) {
+    const raw = parts[index];
+    const token = normalizeTitleToken(raw);
+    const remaining = parts.slice(index + 1);
+
+    if (!token || !NAME_TITLES.has(token) || remaining.length === 0) break;
+
+    // اللقب المفرد (حرف واحد) لا يُحذف إلا إذا تبعه فاصل صريح مثل / - .
+    if (token.length === 1 && !/[/–—.]/.test(raw)) break;
+
+    index += 1;
+  }
+
+  return parts.slice(index).join(" ").trim() || original;
+}
+
 // تصنيفات الأخبار والتعميمات
 export const NEWS_CATEGORIES = [
   "news", // خبر رياضي

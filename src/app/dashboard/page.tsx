@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { getDashboardStats, getVisibleEvents, getVisibleNews } from "@/lib/data";
-import { ROLE_LABELS, EVENT_LABELS, EVENT_SCOPE_LABELS, NEWS_CATEGORY_LABELS } from "@/types";
+import {
+  ROLE_LABELS,
+  EVENT_LABELS,
+  EVENT_SCOPE_LABELS,
+  NEWS_CATEGORY_LABELS,
+  displayName,
+} from "@/types";
 
 export default async function DashboardPage() {
   const session = (await getSession())!;
@@ -15,7 +21,7 @@ export default async function DashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900">
-            مرحباً، {session.name}
+            مرحباً، {displayName(session.name)}
           </h1>
           <p className="text-sm text-slate-500 mt-1">
             نطاق العمل: {ROLE_LABELS[session.role]}

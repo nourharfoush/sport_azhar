@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { loginAction, type LoginState } from "./actions";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const initialState: LoginState = {};
 
@@ -12,7 +13,10 @@ export default function LoginPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-900 to-slate-900 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-b from-emerald-900 to-slate-900 flex items-center justify-center p-6 relative">
+      <div className="absolute top-4 left-4">
+        <ThemeToggle compact tone="dark" />
+      </div>
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 border border-white/20">
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-emerald-700 text-white flex items-center justify-center font-bold text-2xl mx-auto mb-3 shadow-lg shadow-emerald-700/30">

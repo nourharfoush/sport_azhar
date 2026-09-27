@@ -9,7 +9,13 @@ import { Institute } from "@/models/Institute";
 import { MonthlyPlanBuilder } from "./MonthlyPlanBuilder";
 import { DailyReportCard, type VisitRow } from "./DailyReportCard";
 import { supervisedRolesFor } from "./planScope";
-import { MONTH_LABELS, type DailyReportBody, type DailyReportStatus, type VisitType } from "@/types";
+import {
+  MONTH_LABELS,
+  displayName,
+  type DailyReportBody,
+  type DailyReportStatus,
+  type VisitType,
+} from "@/types";
 import { refId, refName } from "@/lib/data";
 
 /** الشهر الحالي بصيغة YYYY-MM. */
@@ -71,7 +77,7 @@ export default async function FollowUpPage() {
 
     supervisorOptions = supervisors.map((s) => ({
       _id: String(s._id),
-      name: s.name,
+      name: displayName(s.name),
       regionName: s.region ? (regionName.get(String(s.region)) ?? "") : "",
       administrationName: s.administration
         ? (adminName.get(String(s.administration)) ?? "")

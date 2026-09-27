@@ -1,8 +1,18 @@
 @import "tailwindcss";
 
+/* ══ الوضع الليلي/النهاري ══
+   نستخدم class-based dark mode عبر المتغير --surface-*.
+   أي مكوّن يستخدم هذه المتغيرات يتكيّف تلقائياً. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+}
+
+.dark {
+  --background: #0b1220;
+  --foreground: #e2e8f0;
 }
 
 @theme inline {
@@ -12,17 +22,95 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ══ تطبيق الوضع الليلي ══
+   المشروع يستخدم أصناف Tailwind ثابتة (bg-white / text-slate-900 ...)،
+   لذلك نُعيد تعيينها داخل .dark بدل تعديل كل مكوّن يدوياً. */
+.dark body {
+  background-color: #0b1220;
+  color: #e2e8f0;
+}
+
+.dark .bg-white,
+.dark .bg-white\/80,
+.dark .bg-white\/90 {
+  background-color: #111c2e !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-slate-50\/50,
+.dark .bg-slate-50\/70,
+.dark .bg-slate-100 {
+  background-color: #0d1726 !important;
+}
+
+.dark .bg-slate-900\/50,
+.dark .bg-slate-900\/40 {
+  background-color: rgb(2 6 23 / 0.75) !important;
+}
+
+.dark .text-slate-900,
+.dark .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-slate-700,
+.dark .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-slate-500,
+.dark .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+.dark .border-slate-200,
+.dark .border-slate-300,
+.dark .border-slate-400,
+.dark .border-slate-100,
+.dark .divide-slate-100,
+.dark .divide-slate-200 {
+  border-color: #1e293b !important;
+  --tw-divide-*: #1e293b;
+}
+
+.dark .bg-emerald-50,
+.dark .bg-emerald-100 {
+  background-color: #06281d !important;
+}
+
+.dark .border-emerald-200,
+.dark .border-emerald-900\/10 {
+  border-color: #064e3b !important;
+}
+
+.dark .text-emerald-800 {
+  color: #6ee7b7 !important;
+}
+
+.dark .shadow-sm,
+.dark .shadow,
+.dark .shadow-md,
+.dark .shadow-lg {
+  --tw-shadow-color: rgb(0 0 0 / 0.5);
+}
+
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #0d1726;
+  border-color: #1e293b;
+  color: #e2e8f0;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b;
 }
 
 

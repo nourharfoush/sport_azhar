@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { SessionUser } from "@/types";
-import { ROLE_LABELS } from "@/types";
+import { ROLE_LABELS, displayName } from "@/types";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { logoutAction } from "@/app/(auth)/login/actions";
 
 interface NavItem {
@@ -72,11 +73,11 @@ function SidebarContent({
         <div className="rounded-2xl border border-slate-800 bg-slate-800/50 p-3.5">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-700 text-sm font-bold text-slate-100">
-              {session.name.trim().charAt(0)}
+              {displayName(session.name).trim().charAt(0) || "م"}
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-slate-100">
-                {session.name}
+                {displayName(session.name)}
               </p>
               <span className="mt-1 inline-block rounded-full border border-emerald-700/60 bg-emerald-950/70 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
                 {ROLE_LABELS[session.role]}
@@ -138,7 +139,8 @@ function SidebarContent({
         })}
       </nav>
 
-      <div className="border-t border-slate-800/80 p-4">
+      <div className="border-t border-slate-800/80 p-4 space-y-2">
+        <ThemeToggle tone="dark" />
         <form action={logoutAction}>
           <button
             type="submit"
@@ -214,9 +216,7 @@ export function DashboardShell({
             </p>
             <p className="text-[10px] text-emerald-600">الأزهر الشريف</p>
           </div>
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-600 text-sm font-bold text-white">
-            أ
-          </span>
+          <ThemeToggle compact tone="light" />
         </header>
 
         <main className="flex-1 overflow-x-hidden p-5 md:p-10">{children}</main>

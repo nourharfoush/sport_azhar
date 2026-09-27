@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { Region } from "../models/Region";
 import { Administration } from "../models/Administration";
@@ -152,14 +152,14 @@ async function run() {
 
   // 4. المستخدمون (مستوى لكل دور)
   const generalUser = await User.create({
-    name: "أ.د/ مدير عام الرعاية الرياضية",
+    name: "مدير عام الرعاية الرياضية",
     email: "general@azhar.edu.eg",
     passwordHash,
     role: "general",
   });
 
   await User.create({
-    name: "أ/ موجه أول منطقة القاهرة",
+    name: "موجه أول منطقة القاهرة",
     email: "cairo.region@azhar.edu.eg",
     passwordHash,
     role: "region",
@@ -167,7 +167,7 @@ async function run() {
   });
 
   await User.create({
-    name: "أ/ مدير إدارة مدينة نصر الرياضية",
+    name: "مدير إدارة مدينة نصر الرياضية",
     email: "nasr.admin@azhar.edu.eg",
     passwordHash,
     role: "administration",

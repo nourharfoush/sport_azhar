@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
+import { displayName } from "@/types";
 
 export default async function HomePage() {
   const session = await getSession();
@@ -29,7 +30,7 @@ export default async function HomePage() {
                 href="/dashboard"
                 className="px-5 py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-medium text-sm transition shadow-sm"
               >
-                الدخول للوحة التحكم ({session.name})
+                الدخول للوحة التحكم ({displayName(session.name)})
               </Link>
             ) : (
               <Link
