@@ -1,4 +1,4 @@
-﻿# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
 /node_modules
@@ -46,6 +46,11 @@ next-env.d.ts
 /public/uploads/news/*
 !/public/uploads/news/.gitkeep
 
+# photos of gifted students
+!/public/uploads/gifted/
+/public/uploads/gifted/*
+!/public/uploads/gifted/.gitkeep
+
 # بيانات دخول حسابات المناطق (حساسة - لا تُرفع على Git)
 /src/scripts/region-credentials.txt
 /src/scripts/administration-credentials.txt
@@ -53,3 +58,4 @@ next-env.d.ts
 # ����� ���� ������� ������
 /dev-out.log
 /dev-err.log
+/dev-restart.log

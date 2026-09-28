@@ -1,6 +1,12 @@
 "use client";
 
-import { NEWS_CATEGORIES, NEWS_CATEGORY_LABELS } from "@/types";
+import {
+  NEWS_CATEGORIES,
+  NEWS_CATEGORY_LABELS,
+  availableNewsCategories,
+  type NewsCategory,
+  type Role,
+} from "@/types";
 import { ImageUploadField } from "./ImageUploadField";
 
 interface Props {
@@ -9,10 +15,22 @@ interface Props {
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   loading: boolean;
   error: string | null;
+  /** دور المستخدم: يحجب تصنيفات الإدارة العامة عن غيرها */
+  userRole: Role;
 }
 
-export function CreateNewsModal({ open, onClose, onSubmit, loading, error }: Props) {
+export function CreateNewsModal({
+  open,
+  onClose,
+  onSubmit,
+  loading,
+  error,
+  userRole,
+}: Props) {
   if (!open) return null;
+
+  const categories = availableNewsCategories(userRole);
+  const isRestricted = categories.length < NEWS_CATEGORIES.length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
@@ -52,12 +70,17 @@ export function CreateNewsModal({ open, onClose, onSubmit, loading, error }: Pro
               required
               className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white"
             >
-              {NEWS_CATEGORIES.map((c) => (
+              {categories.map((c) => (
                 <option key={c} value={c}>
-                  {NEWS_CATEGORY_LABELS[c]}
+                  {NEWS_CATEGORY_LABELS[c as NewsCategory]}
                 </option>
               ))}
             </select>
+            {isRestricted && (
+              <p className="text-[11px] text-slate-500 mt-1">
+                «دليل العمل» و«ضوابط وتعليمات» من اختصاص الإدارة العامة وحدها.
+              </p>
+            )}
           </div>
 
           <div>

@@ -14,6 +14,8 @@ const CATEGORY_STYLES: Record<string, string> = {
   announcement: "bg-blue-50 text-blue-700 border-blue-200",
   decision: "bg-amber-50 text-amber-700 border-amber-200",
   sports_report: "bg-purple-50 text-purple-700 border-purple-200",
+  work_manual: "bg-slate-100 text-slate-800 border-slate-300",
+  regulations: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
 export function NewsTable({ news, canManageNewsItem, onEdit, onDelete }: Props) {

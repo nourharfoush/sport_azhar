@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import {
-  SPORTS,
-  ALL_SPORTS,
-  SPORTS_BY_GENDER,
+  ITEMS_BY_CATEGORY_AND_GENDER,
+  SPORT_CATEGORIES,
+  SPORT_CATEGORY_LABELS,
   GENDERS,
   GENDER_LABELS,
-  type Gender,
   type Role,
 } from "@/types";
 import { EventItem } from "./types";
@@ -43,6 +42,7 @@ export function EventList({
   const canCreate = userRole !== "institute";
 
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [sportFilter, setSportFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -67,6 +67,7 @@ export function EventList({
   };
 
   const filteredEvents = events.filter((e) => {
+    if (categoryFilter !== "all" && e.category !== categoryFilter) return false;
     if (genderFilter !== "all" && e.gender !== genderFilter) return false;
     if (sportFilter !== "all" && e.sport !== sportFilter) return false;
     if (statusFilter !== "all" && e.status !== statusFilter) return false;
@@ -151,20 +152,50 @@ export function EventList({
           </select>
 
           <select
+            value={categoryFilter}
+            onChange={(e) => {
+              setCategoryFilter(e.target.value);
+              setSportFilter("all");
+            }}
+            className="px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white"
+            aria-label="فلتر المسار"
+          >
+            <option value="all">كل المسارات</option>
+            {SPORT_CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {SPORT_CATEGORY_LABELS[c]}
+              </option>
+            ))}
+          </select>
+
+          <select
             value={sportFilter}
             onChange={(e) => setSportFilter(e.target.value)}
             className="px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white"
+            aria-label="فلتر اللعبة"
           >
-            <option value="all">جميع الألعاب الرياضية</option>
-            {(
-              genderFilter === "all"
-                ? ALL_SPORTS
-                : (SPORTS_BY_GENDER[genderFilter as Gender] ?? SPORTS)
-            ).map((s: string) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
+            <option value="all">جميع الألعاب والبرامج</option>
+            {SPORT_CATEGORIES.filter(
+              (c) => categoryFilter === "all" || categoryFilter === c,
+            ).map((c) => {
+              const items = new Set<string>([
+                ...ITEMS_BY_CATEGORY_AND_GENDER[c].بنين,
+                ...ITEMS_BY_CATEGORY_AND_GENDER[c].فتيات,
+              ]);
+              if (items.size === 0) return null;
+              return (
+                <optgroup
+                  key={c}
+                  label={SPORT_CATEGORY_LABELS[c]}
+                >
+                  {[...items].map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
           </select>
 
           <select
@@ -179,10 +210,11 @@ export function EventList({
             <option value="archived">مؤرشفة</option>
           </select>
 
-          {(search || genderFilter !== "all" || sportFilter !== "all" || statusFilter !== "all") && (
+          {(search || categoryFilter !== "all" || genderFilter !== "all" || sportFilter !== "all" || statusFilter !== "all") && (
             <button
               onClick={() => {
                 setSearch("");
+                setCategoryFilter("all");
                 setGenderFilter("all");
                 setSportFilter("all");
                 setStatusFilter("all");

@@ -1,10 +1,10 @@
 import mongoose, { Schema, Model, Document, Types } from "mongoose";
-import { Role } from "@/types";
+import { NEWS_CATEGORIES, type NewsCategory, type Role } from "@/types";
 
 export interface INews extends Document {
   title: string;
   content: string;
-  category: "news" | "announcement" | "decision" | "sports_report";
+  category: NewsCategory;
   scope: "general" | "region" | "administration";
   region?: Types.ObjectId | null;
   administration?: Types.ObjectId | null;
@@ -24,7 +24,7 @@ const NewsSchema = new Schema<INews>(
     content: { type: String, required: true, trim: true },
     category: {
       type: String,
-      enum: ["news", "announcement", "decision", "sports_report"],
+      enum: NEWS_CATEGORIES,
       default: "news",
     },
     scope: {

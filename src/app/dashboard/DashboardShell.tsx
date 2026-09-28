@@ -30,13 +30,15 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/dashboard/events", label: "الفعاليات والمسابقات", icon: "🏆" },
       { href: "/dashboard/news", label: "الأخبار والتعميمات", icon: "📰" },
-      { href: "/dashboard/followup", label: "المتابعات الشهرية", icon: "📋" },
+      { href: "/dashboard/planning", label: "التخطيط والمتابعة", icon: "🗓️" },
+      { href: "/dashboard/gifted", label: "ركن الموهوبين", icon: "⭐" },
     ],
   },
   {
     title: "الإدارة",
     items: [
       { href: "/dashboard/users", label: "المستخدمون والصلاحيات", icon: "👥" },
+      { href: "/dashboard/specs", label: "مقاييس الملاعب والأجهزة", icon: "📐" },
       { href: "/dashboard/entities", label: "الهيكل التنظيمي", icon: "🏢" },
     ],
   },

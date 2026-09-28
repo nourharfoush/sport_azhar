@@ -113,6 +113,92 @@ export function isSportValid(gender: string, sport: string): boolean {
   return list.includes(sport);
 }
 
+// ─────────────────────────────────────────────────────────────
+// المسارات: البرامج والمشروعات  |  المسابقات الرياضية
+// ─────────────────────────────────────────────────────────────
+
+export const SPORT_CATEGORIES = ["programs", "competitions"] as const;
+
+export type SportCategory = (typeof SPORT_CATEGORIES)[number];
+
+export const SPORT_CATEGORY_LABELS: Record<SportCategory, string> = {
+  programs: "البرامج والمشروعات",
+  competitions: "المسابقات الرياضية",
+};
+
+/**
+ * المسار الأول: البرامج والمشروعات.
+ * - "المشروع القومي للياقة البدنية" و"العروض الرياضية" متاحان للجميع.
+ * - "الزهرات والمرشدات" للبنات فقط.
+ */
+export const PROGRAMS = [
+  "المشروع القومي للياقة البدنية",
+  "الزهرات والمرشدات",
+  "العروض الرياضية",
+] as const;
+
+/** برامج متاحة لفئة الفتيات فقط. */
+export const FEMALE_ONLY_PROGRAMS = ["الزهرات والمرشدات"] as const;
+
+/** البرامج المشتركة بين الفئتين. */
+export const COMMON_PROGRAMS = [
+  "المشروع القومي للياقة البدنية",
+  "العروض الرياضية",
+] as const;
+
+/** قائمة البرامج لكل فئة. */
+export const PROGRAMS_BY_GENDER: Record<Gender, readonly string[]> = {
+  بنين: COMMON_PROGRAMS,
+  فتيات: PROGRAMS,
+};
+
+/**
+ * المسار الثاني: المسابقات الرياضية.
+ * المرشدات والزهرات مسابقات تُقام للبنات ضمن هذا المسار.
+ */
+export const COMPETITIONS_BY_GENDER: Record<Gender, readonly string[]> = {
+  بنين: SPORTS,
+  فتيات: [...SPORTS, ...FEMALE_ONLY_SPORTS],
+};
+
+/** عناصر كل مسار لكل فئة — تُستخدم في القوائم المُجمَّعة. */
+export const ITEMS_BY_CATEGORY_AND_GENDER: Record<
+  SportCategory,
+  Record<Gender, readonly string[]>
+> = {
+  programs: PROGRAMS_BY_GENDER,
+  competitions: COMPETITIONS_BY_GENDER,
+};
+
+/** كل العناصر المتاحة لكل فئة (برامج + مسابقات بدون تكرار). */
+export const ACTIVITIES_BY_GENDER: Record<Gender, readonly string[]> = {
+  بنين: [...new Set([...PROGRAMS_BY_GENDER.بنين, ...COMPETITIONS_BY_GENDER.بنين])],
+  فتيات: [...new Set([...PROGRAMS_BY_GENDER.فتيات, ...COMPETITIONS_BY_GENDER.فتيات])],
+};
+
+/** كل العناصر في المسارين (بلا تكرار) — تُستخدم في فلاتر العرض. */
+export const ALL_ACTIVITIES: readonly string[] = [
+  ...new Set([...ACTIVITIES_BY_GENDER.بنين, ...ACTIVITIES_BY_GENDER.فتيات]),
+];
+
+/** استنتاج المسار الذي تنتمي إليه اللعبة أو البرنامج من اسمه. */
+export function categoryOf(item: string): SportCategory {
+  return (PROGRAMS as readonly string[]).includes(item)
+    ? "programs"
+    : "competitions";
+}
+
+/** التحقق من صحة العنصر بالنسبة للمسار والفئة المختارة. */
+export function isActivityValid(
+  gender: string,
+  category: SportCategory,
+  item: string,
+): boolean {
+  if (categoryOf(item) !== category) return false;
+  const list = ITEMS_BY_CATEGORY_AND_GENDER[category][gender as Gender];
+  return (list ?? []).includes(item);
+}
+
 
 // ─────────────────────────────────────────────────────────────
 // الخطة الشهرية للموجّه + التقارير اليومية
@@ -323,12 +409,89 @@ export function displayName(name?: string | null): string {
   return parts.slice(index).join(" ").trim() || original;
 }
 
+// ─────────────────────────────────────────────────────────────
+// ركن الموهوبين: الطلاب الموهوبون رياضيًا
+// ─────────────────────────────────────────────────────────────
+
+/** الصفوف الدراسية في مراحل الأزهر (ابتدائي / إعدادي / ثانوي). */
+export const STUDENT_GRADES = [
+  "الصف الأول الابتدائي",
+  "الصف الثاني الابتدائي",
+  "الصف الثالث الابتدائي",
+  "الصف الرابع الابتدائي",
+  "الصف الخامس الابتدائي",
+  "الصف السادس الابتدائي",
+  "الصف الأول الإعدادي",
+  "الصف الثاني الإعدادي",
+  "الصف الثالث الإعدادي",
+  "الصف الأول الثانوي",
+  "الصف الثاني الثانوي",
+  "الصف الثالث الثانوي",
+] as const;
+
+export type StudentGrade = (typeof STUDENT_GRADES)[number];
+
+/** طول الرقم القومي المصري (14 رقمًا). */
+export const NATIONAL_ID_LENGTH = 14;
+
+/** التحقق من صيغة الرقم القومي: 14 رقمًا بلا مسافات أو رموز. */
+export function isNationalIdValid(value: string): boolean {
+  return new RegExp(`^\\d{${NATIONAL_ID_LENGTH}}$`).test(value.trim());
+}
+
+// ─────────────────────────────────────────────────────────────
+// التخطيط والمتابعة: أقسام القسم الرئيسي
+// ─────────────────────────────────────────────────────────────
+
+export const PLANNING_SECTIONS = [
+  "conferences", // المؤتمرات والاجتماعات
+  "time_plan", // الخطة الزمنية للبرامج والأنشطة الرياضية للعام الدراسي
+  "recommendations", // التوصيات والمقترحات
+  "monthly_followup", // المتابعات الشهرية
+  "followup_reports", // التقارير للمتابعات
+  "annual_reports", // التقارير السنوية
+  "improvement_plans", // خطط التحسين
+] as const;
+
+export type PlanningSection = (typeof PLANNING_SECTIONS)[number];
+
+export const PLANNING_SECTION_LABELS: Record<PlanningSection, string> = {
+  conferences: "المؤتمرات والاجتماعات",
+  time_plan: "الخطة الزمنية للبرامج والأنشطة الرياضية",
+  recommendations: "التوصيات والمقترحات",
+  monthly_followup: "المتابعات الشهرية",
+  followup_reports: "التقارير للمتابعات",
+  annual_reports: "التقارير السنوية",
+  improvement_plans: "خطط التحسين",
+};
+
+/** أقسام تبويب داخل «التخطيط والمتابعة» (بترتيب العرض). */
+export const PLANNING_TABS: PlanningSection[] = [...PLANNING_SECTIONS];
+
+/** الأقسام التي تُدار بسجل موحّد (الباقي له صفحات قائمة خاصة به). */
+export const GENERIC_PLANNING_SECTIONS: PlanningSection[] = [
+  "conferences",
+  "time_plan",
+  "recommendations",
+  "annual_reports",
+  "improvement_plans",
+];
+
+/** التحقق من صحة القسم. */
+export function isPlanningSection(
+  value: string,
+): value is PlanningSection {
+  return (PLANNING_SECTIONS as readonly string[]).includes(value);
+}
+
 // تصنيفات الأخبار والتعميمات
 export const NEWS_CATEGORIES = [
   "news", // خبر رياضي
   "announcement", // إعلان وتنبيه
   "decision", // قرار وزاري / إداري
   "sports_report", // تقرير وبطولات
+  "work_manual", // دليل عمل
+  "regulations", // ضوابط وتعليمات
 ] as const;
 
 export type NewsCategory = (typeof NEWS_CATEGORIES)[number];
@@ -338,6 +501,34 @@ export const NEWS_CATEGORY_LABELS: Record<NewsCategory, string> = {
   announcement: "إعلان وتنبيه",
   decision: "قرار وزاري / إداري",
   sports_report: "تقرير نتائج وبطولات",
+  work_manual: "دليل عمل",
+  regulations: "ضوابط وتعليمات",
 };
+
+/**
+ * تصنيفات محجوزة للإدارة العامة وحدها في الإضافة والتعديل والحذف،
+ * لكن يراها جميع المستخدمين (دليل العمل / الضوابط والتعليمات).
+ */
+export const GENERAL_ONLY_NEWS_CATEGORIES = [
+  "work_manual",
+  "regulations",
+] as const;
+
+export type GeneralOnlyNewsCategory =
+  (typeof GENERAL_ONLY_NEWS_CATEGORIES)[number];
+
+/** هل التصنيف من اختصاص الإدارة العامة وحدها؟ */
+export function isGeneralOnlyCategory(
+  category: string,
+): category is GeneralOnlyNewsCategory {
+  return (GENERAL_ONLY_NEWS_CATEGORIES as readonly string[]).includes(category);
+}
+
+/** التصنيفات التي يستطيع المستخدم إضافتها حسب دوره. */
+export function availableNewsCategories(userRole: string): readonly string[] {
+  return userRole === "general"
+    ? NEWS_CATEGORIES
+    : NEWS_CATEGORIES.filter((c) => !isGeneralOnlyCategory(c));
+}
 
 

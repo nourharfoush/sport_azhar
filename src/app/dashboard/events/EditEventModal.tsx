@@ -1,11 +1,12 @@
 import { useState } from "react";
-import {
-  GENDERS,
-  GENDER_LABELS,
-  SPORTS_BY_GENDER,
-  type Gender,
-} from "@/types";
+import { GENDERS, GENDER_LABELS, type Gender } from "@/types";
 import { EventItem } from "./types";
+import {
+  EventActivityFields,
+  initialActivity,
+  isAvailable,
+  type ActivityState,
+} from "./EventActivityFields";
 
 interface Props {
   event: EventItem | null;
@@ -17,9 +18,22 @@ interface Props {
 
 export function EditEventModal({ event, onClose, onSubmit, loading, error }: Props) {
   const [gender, setGender] = useState<Gender>(event?.gender ?? "بنين");
-  const [sport, setSport] = useState<string>(event?.sport ?? "");
+  const [activity, setActivity] = useState<ActivityState>(() =>
+    initialActivity(event),
+  );
 
   if (!event) return null;
+
+  /** تغيير الفئة: نُبطل اللعبة إن لم تعد متاحة لها. */
+  const changeGender = (value: Gender) => {
+    setGender(value);
+    if (
+      activity.sport &&
+      !isAvailable(activity.category, value, activity.sport)
+    ) {
+      setActivity({ ...activity, sport: "" });
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
@@ -57,10 +71,7 @@ export function EditEventModal({ event, onClose, onSubmit, loading, error }: Pro
               <select
                 name="gender"
                 value={gender}
-                onChange={(e) => {
-                  setGender(e.target.value as Gender);
-                  setSport("");
-                }}
+                onChange={(e) => changeGender(e.target.value as Gender)}
                 className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white"
               >
                 {GENDERS.map((g) => (
@@ -70,20 +81,12 @@ export function EditEventModal({ event, onClose, onSubmit, loading, error }: Pro
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">اللعبة الرياضية *</label>
-              <select
-                name="sport"
-                value={sport}
-                onChange={(e) => setSport(e.target.value)}
-                required
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white"
-              >
-                {(SPORTS_BY_GENDER[gender] ?? []).map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </div>
+            <EventActivityFields
+              state={activity}
+              gender={gender}
+              onChange={setActivity}
+              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white"
+            />
             <div className="col-span-2">
               <label className="block text-xs font-semibold text-slate-700 mb-1">الموسم الرياضي</label>
               <input

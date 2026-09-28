@@ -148,6 +148,30 @@ export async function saveImages(
     : saveToDisk(files, folder);
 }
 
+/**
+ * حفظ صورة واحدة (صورة الطالب الموهوب).
+ * يستخدم نفس التحقق من الصيغة والحجم المستخدَم في `saveImages`،
+ * ويعيد المسار الناتج أو رسالة خطأ.
+ */
+export async function saveSingleImage(
+  file: File | null,
+  folder: string,
+): Promise<{ path: string | null; error?: string }> {
+  if (!file) return { path: null };
+
+  const { paths, error } = await saveImages([file], folder);
+  if (error) return { path: null, error };
+  return { path: paths[0] ?? null };
+}
+
+/**
+ * تصفية قيمة صورة مفردة قادمة من النموذج/قاعدة البيانات.
+ * تقبل المسارات المحلية `/uploads/...` أو روابط Vercel Blob العامة فقط.
+ */
+export function normalizeImagePath(value: unknown): string {
+  return normalizeImagePaths(value)[0] ?? "";
+}
+
 /** حذف صور مرفوعة (محلية أو سحابية) — يتجاهل أي قيمة غير معروفة المصدر. */
 export async function deleteImages(paths: string[]): Promise<void> {
   const local: string[] = [];

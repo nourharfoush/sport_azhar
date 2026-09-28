@@ -6,7 +6,10 @@ import { Institute } from "@/models/Institute";
 import { Event, type IEvent } from "@/models/Event";
 import { FollowUp } from "@/models/FollowUp";
 import { News } from "@/models/News";
-import { buildNewsFilter, canManageNews } from "@/lib/rbac";
+import { GiftedStudent } from "@/models/GiftedStudent";
+import { SportsReference } from "@/models/SportsReference";
+import { PlanningRecord } from "@/models/PlanningRecord";
+import { buildNewsFilter, buildGiftedFilter, buildPlanningFilter, canManageNews } from "@/lib/rbac";
 
 import { buildEventFilter } from "@/lib/rbac";
 import type { SessionUser } from "@/types";
@@ -99,6 +102,106 @@ export async function getVisibleNews(user: SessionUser) {
     .lean();
 }
 
+
+/**
+ * الطلاب الموهوبون المرئيون للمستخدم مع أسماء النطاق الكامل
+ * (منطقة + إدارة تعليمية + معهد) جاهزة للعرض.
+ */
+export async function getVisibleGiftedStudents(user: SessionUser) {
+  await dbConnect();
+  return GiftedStudent.find(buildGiftedFilter(user))
+    .populate("region", "name")
+    .populate("administration", "name")
+    .populate("institute", "name code stage type")
+    .sort({ createdAt: -1 })
+    .lean();
+}
+
+/**
+ * سجلات «التخطيط والمتابعة» المرئية للمستخدم في قسم معيّن.
+ * السجلات المركزية (بلا نطاق) مرئية للجميع كمرجع مشترك.
+ */
+export async function getPlanningRecords(
+  user: SessionUser,
+  section?: string,
+) {
+  await dbConnect();
+  const filter: Record<string, unknown> = { ...buildPlanningFilter(user) };
+  if (section) filter.section = section;
+
+  return PlanningRecord.find(filter)
+    .populate("region", "name")
+    .populate("administration", "name")
+    .populate("institute", "name code")
+    .sort({ createdAt: -1 })
+    .lean();
+}
+
+/**
+ * السجلات المرجعية الرياضية (مقاييس الملاعب / مواصفات الأجهزة الرياضية).
+ * مرئية لجميع المستخدمين على اختلاف الأدوار — القراءة فقط لغير الإدارة العامة.
+ */
+export async function getSportsReferences(kind?: "pitch" | "equipment") {
+  await dbConnect();
+  return SportsReference.find(kind ? { kind } : {})
+    .sort({ sport: 1, name: 1 })
+    .lean();
+}
+
+/**
+ * المعاهد التي يستطيع المستخدم تسجيل طلاب موهوبين لها,
+ * مع اسم المنطقة واسم الإدارة لتعبئة النموذج مترابطة (منطقة ← إدارة ← معهد).
+ */
+export async function getGiftedInstituteOptions(user: SessionUser) {
+  await dbConnect();
+  const institutes = await getScopedInstitutes(user);
+  if (institutes.length === 0) return [];
+
+  const adminIds = [
+    ...new Set(
+      institutes
+        .map((i) => String(i.administration))
+        .filter((id) => id && id !== "null"),
+    ),
+  ];
+  const admins = await Administration.find({ _id: { $in: adminIds } })
+    .select("name region")
+    .lean();
+
+  const regionIds = [
+    ...new Set(
+      admins
+        .map((a) => (a.region ? String(a.region) : ""))
+        .filter((id) => id && id !== "null"),
+    ),
+  ];
+  const regions = await Region.find({ _id: { $in: regionIds } })
+    .select("name")
+    .lean();
+
+  const adminName = new Map(admins.map((a) => [String(a._id), a.name]));
+  const adminRegion = new Map(
+    admins.map((a) => [String(a._id), a.region ? String(a.region) : ""]),
+  );
+  const regionName = new Map(regions.map((r) => [String(r._id), r.name]));
+
+  return institutes
+    .map((i) => {
+      const administrationId = String(i.administration);
+      const regionId = adminRegion.get(administrationId) ?? "";
+      return {
+        _id: String(i._id),
+        name: i.name,
+        code: i.code,
+        stage: i.stage,
+        administrationId,
+        administrationName: adminName.get(administrationId) ?? "",
+        regionId,
+        regionName: regionName.get(regionId) ?? "",
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, "ar"));
+}
 
 /** المعاهد المستهدفة بفعالية حسب نطاقها. */
 export async function resolveTargetInstituteIds(event: IEvent) {

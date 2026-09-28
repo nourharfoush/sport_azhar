@@ -6,10 +6,14 @@ import { getSession } from "@/lib/auth";
 import { News } from "@/models/News";
 import {
   canManageNews,
-  canManageScopedItem,
+  canManageNewsItem,
   scopedOwnershipForRole,
 } from "@/lib/rbac";
-import { NEWS_CATEGORIES, type NewsCategory } from "@/types";
+import {
+  NEWS_CATEGORIES,
+  isGeneralOnlyCategory,
+  type NewsCategory,
+} from "@/types";
 import {
   MAX_IMAGES_PER_NEWS,
   deleteImages,
@@ -24,6 +28,12 @@ function parseCategory(value: string): NewsCategory | null {
     ? (value as NewsCategory)
     : null;
 }
+
+/**
+ * تصنيفات الإدارة العامة (دليل العمل / الضوابط والتعليمات):
+ * لا يضيفها أو يعدّلها أو يحذفها إلا دور «الإدارة العامة».
+ */
+const GENERAL_ONLY_ERROR = "هذا التصنيف من اختصاص الإدارة العامة وحدها.";
 
 /** إنشاء خبر/تعميم داخل نطاق المستخدم حسب مستواه الهرمي. */
 export async function createNewsAction(
@@ -45,6 +55,9 @@ export async function createNewsAction(
   }
   if (!category) {
     return { success: false, error: "تصنيف الخبر غير صالح." };
+  }
+  if (isGeneralOnlyCategory(category) && session.role !== "general") {
+    return { success: false, error: GENERAL_ONLY_ERROR };
   }
 
   // الصور المرفقة (اختيارية) — تُحفظ داخل public/uploads/news
@@ -103,6 +116,9 @@ export async function updateNewsAction(
   if (!category) {
     return { success: false, error: "تصنيف الخبر غير صالح." };
   }
+  if (isGeneralOnlyCategory(category) && session.role !== "general") {
+    return { success: false, error: GENERAL_ONLY_ERROR };
+  }
 
   await dbConnect();
   try {
@@ -110,7 +126,8 @@ export async function updateNewsAction(
     if (!news) return { success: false, error: "الخبر غير موجود." };
 
     // التحقق من الصلاحيات (منطق موحّد في lib/rbac)
-    if (!canManageScopedItem(session, news)) {
+    // يشمل: النطاق الإداري + حصر تصنيفات الإدارة العامة
+    if (!canManageNewsItem(session, news)) {
       return { success: false, error: "لا تملك صلاحية تعديل خبر خارج نطاقك." };
     }
 
@@ -162,7 +179,7 @@ export async function toggleNewsPublishAction(formData: FormData): Promise<void>
   const news = await News.findById(id);
   if (!news) return;
 
-  if (!canManageScopedItem(session, news)) return;
+  if (!canManageNewsItem(session, news)) return;
 
   news.published = !news.published;
   await news.save();
@@ -183,7 +200,7 @@ export async function toggleNewsPinAction(formData: FormData): Promise<void> {
   const news = await News.findById(id);
   if (!news) return;
 
-  if (!canManageScopedItem(session, news)) return;
+  if (!canManageNewsItem(session, news)) return;
 
   news.isPinned = !news.isPinned;
   await news.save();
@@ -210,7 +227,7 @@ export async function deleteNewsAction(
     if (!news) return { success: false, error: "الخبر غير موجود." };
 
     // التحقق من الصلاحيات (منطق موحّد في lib/rbac)
-    if (!canManageScopedItem(session, news)) {
+    if (!canManageNewsItem(session, news)) {
       return { success: false, error: "لا تملك صلاحية حذف خبر خارج نطاقك." };
     }
 

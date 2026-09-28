@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { NEWS_CATEGORIES, NEWS_CATEGORY_LABELS, type Role } from "@/types";
+import {
+  NEWS_CATEGORIES,
+  NEWS_CATEGORY_LABELS,
+  isGeneralOnlyCategory,
+  type Role,
+} from "@/types";
 import { NewsItem } from "./types";
 import {
   createNewsAction,
@@ -39,8 +44,13 @@ export function NewsList({
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  /** نفس منطق الصلاحيات المطبّق على السيرفر (lib/rbac -> canManageScopedItem). */
+  /**
+   * نفس منطق الصلاحيات المطبّق على السيرفر
+   * (lib/rbac -> canManageNewsItem): النطاق + حصر تصنيفات الإدارة العامة.
+   */
   const canManageNewsItem = (n: NewsItem) => {
+    // دليل العمل وضوابط وتعليمات: للإدارة العامة وحدها
+    if (isGeneralOnlyCategory(n.category)) return userRole === "general";
     if (userRole === "general") return true;
     if (userRole === "region") {
       return n.scope !== "general" && n.region === userRegionId;
@@ -209,6 +219,7 @@ export function NewsList({
         onSubmit={handleCreateSubmit}
         loading={formLoading}
         error={formError}
+        userRole={userRole}
       />
 
       <EditNewsModal
@@ -218,6 +229,7 @@ export function NewsList({
         onSubmit={handleEditSubmit}
         loading={formLoading}
         error={formError}
+        userRole={userRole}
       />
 
       <DeleteNewsModal

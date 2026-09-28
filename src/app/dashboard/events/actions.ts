@@ -11,17 +11,52 @@ import { Administration } from "@/models/Administration";
 import { Region } from "@/models/Region";
 import { Institute } from "@/models/Institute";
 import {
-  SPORTS,
-  SPORTS_BY_GENDER,
+  SPORT_CATEGORIES,
   GENDERS,
-  isSportValid,
+  categoryOf,
+  isActivityValid,
   FOLLOWUP_STATUSES,
   EVENT_STATUSES,
   type EventStatus,
   type FollowupStatus,
   type EventScope,
   type Gender,
+  type SportCategory,
 } from "@/types";
+
+/**
+ * التحقق من المسار + اللعبة معًا في سياق الفعاليات.
+ * المسار إجباري، واللعبة يجب أن تنتمي إليه وللفئة المختارة.
+ */
+function validateActivity(
+  gender: string,
+  category: string,
+  sport: string,
+  itemLabel = "الرياضة",
+): { error?: string } {
+  if (!SPORT_CATEGORIES.includes(category as SportCategory)) {
+    return { error: "المسار المختار غير صالح." };
+  }
+  const cat = category as SportCategory;
+  if (categoryOf(sport) !== cat) {
+    return {
+      error:
+        cat === "programs"
+          ? "العنصر المختار ليس من البرامج والمشروعات."
+          : "العنصر المختار ليس من المسابقات الرياضية.",
+    };
+  }
+  if (!isActivityValid(gender, cat, sport)) {
+    const femaleOnly =
+      gender === "بنين" && isActivityValid("فتيات", cat, sport);
+    return {
+      error: femaleOnly
+        ? "هذا العنصر متاح لفئة البنات فقط."
+        : `${itemLabel} المختارة غير متاحة لفئة المتسابقين.`,
+    };
+  }
+  return {};
+}
 
 /**
  * تحديد نطاق (مستوى) المسابقة الجديدة حسب دور المستخدم مع التحقق من الصلاحية:
@@ -127,6 +162,9 @@ export async function createEventAction(formData: FormData): Promise<{ success: 
 
   const title = String(formData.get("title") ?? "").trim();
   const gender = String(formData.get("gender") ?? "بنين").trim() as Gender;
+  const category = String(
+    formData.get("category") ?? "competitions",
+  ).trim();
   const sport = String(formData.get("sport") ?? "");
   const season = String(formData.get("season") ?? "2025/2026").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -139,14 +177,9 @@ export async function createEventAction(formData: FormData): Promise<{ success: 
   if (!GENDERS.includes(gender)) {
     return { success: false, error: "فئة المتسابقين غير صالحة." };
   }
-  if (!isSportValid(gender, sport)) {
-    return {
-      success: false,
-      error:
-        gender === "فتيات" && !SPORTS.includes(sport as (typeof SPORTS)[number])
-          ? "هذه اللعبة متاحة لفئة البنات فقط (المرشدات / الزهرات)."
-          : "اللعبة الرياضية غير صالحة.",
-    };
+  const activityError = validateActivity(gender, category, sport);
+  if (activityError.error) {
+    return { success: false, error: activityError.error };
   }
 
   await dbConnect();
@@ -162,6 +195,7 @@ export async function createEventAction(formData: FormData): Promise<{ success: 
     await Event.create({
       title,
       gender,
+      category: category as SportCategory,
       sport,
       season,
       description,
@@ -213,6 +247,9 @@ export async function updateEventAction(formData: FormData): Promise<{ success: 
   const id = String(formData.get("id") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
   const gender = String(formData.get("gender") ?? "بنين").trim() as Gender;
+  const category = String(
+    formData.get("category") ?? "competitions",
+  ).trim();
   const sport = String(formData.get("sport") ?? "");
   const season = String(formData.get("season") ?? "2025/2026").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -226,14 +263,9 @@ export async function updateEventAction(formData: FormData): Promise<{ success: 
   if (!GENDERS.includes(gender)) {
     return { success: false, error: "فئة المتسابقين غير صالحة." };
   }
-  if (!isSportValid(gender, sport)) {
-    return {
-      success: false,
-      error:
-        gender === "فتيات" && !SPORTS.includes(sport as (typeof SPORTS)[number])
-          ? "هذه اللعبة متاحة لفئة البنات فقط (المرشدات / الزهرات)."
-          : "الرياضة المختارة غير صالحة.",
-    };
+  const activityError = validateActivity(gender, category, sport);
+  if (activityError.error) {
+    return { success: false, error: activityError.error };
   }
 
   await dbConnect();
@@ -251,6 +283,7 @@ export async function updateEventAction(formData: FormData): Promise<{ success: 
 
     event.title = title;
     event.gender = gender;
+    event.category = category as SportCategory;
     event.sport = sport;
     event.season = season;
     event.description = description;

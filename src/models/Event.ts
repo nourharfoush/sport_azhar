@@ -1,10 +1,12 @@
 import mongoose, { Schema, Model, Document, Types } from "mongoose";
 import {
-  ALL_SPORTS,
+  ALL_ACTIVITIES,
   GENDERS,
+  SPORT_CATEGORIES,
   EVENT_STATUSES,
   type EventStatus,
   type Gender,
+  type SportCategory,
 } from "@/types";
 
 /**
@@ -17,6 +19,8 @@ import {
 export interface IEvent extends Document {
   title: string;
   sport: string;
+  /** المسار: برامج ومشروعات | مسابقات رياضية */
+  category: SportCategory;
   gender: Gender;
   season: string;
   description?: string;
@@ -34,7 +38,12 @@ const EventSchema = new Schema<IEvent>(
   {
     title: { type: String, required: true, trim: true },
     gender: { type: String, enum: GENDERS, default: "بنين" },
-    sport: { type: String, enum: ALL_SPORTS, required: true },
+    category: {
+      type: String,
+      enum: SPORT_CATEGORIES,
+      default: "competitions",
+    },
+    sport: { type: String, enum: ALL_ACTIVITIES, required: true },
     season: { type: String, required: true, trim: true, default: "2025/2026" },
     description: { type: String, trim: true },
     scope: {

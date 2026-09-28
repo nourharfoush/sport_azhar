@@ -4,6 +4,7 @@ import { Administration } from "@/models/Administration";
 import { Region } from "@/models/Region";
 import type { Gender } from "@/types";
 import { getVisibleEvents, refId, refName } from "@/lib/data";
+import { categoryOf } from "@/types";
 import { EventList } from "./EventList";
 
 export default async function EventsPage() {
@@ -31,6 +32,8 @@ export default async function EventsPage() {
     _id: String(e._id),
     title: e.title,
     sport: e.sport,
+    // السجلات القديمة لا تحمل المسار، فنستنتجه من اسم اللعبة
+    category: e.category ?? categoryOf(e.sport),
     gender: (e.gender as Gender) ?? "بنين",
     season: e.season,
     description: e.description || "",
