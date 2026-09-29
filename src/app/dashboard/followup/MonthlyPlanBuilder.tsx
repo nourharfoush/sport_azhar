@@ -2,13 +2,15 @@
 
 import { useActionState, useState } from "react";
 import { saveMonthlyPlanAction } from "./planActions";
-import { VISIT_TYPES, VISIT_TYPE_LABELS, type VisitType } from "@/types";
+import { VISIT_TYPES, VISIT_TYPE_LABELS, type Role, type VisitType } from "@/types";
 
 export interface PlanSupervisorOption {
   _id: string;
   name: string;
   regionName: string;
   administrationName: string;
+  /** دور الموجّه — يحدد نوع المتابعة (معهد أم إدارة تعليمية). */
+  role?: Role;
 }
 
 export interface PlanInstituteOption {
@@ -17,12 +19,22 @@ export interface PlanInstituteOption {
   stage: string;
   administrationName: string;
   regionName: string;
+  /** معرّف الإدارة التعليمية (تُستعمل لربط الموعد). */
+  administrationId?: string;
+}
+
+export interface PlanAdministrationOption {
+  _id: string;
+  name: string;
+  regionName: string;
 }
 
 interface DraftRow {
   key: number;
   supervisorId: string;
   instituteId: string;
+  /** معرّف الإدارة التعليمية المستهدفة (للعضو الفني). */
+  administrationId: string;
   visitType: VisitType;
   date: string;
 }
@@ -30,17 +42,27 @@ interface DraftRow {
 let rowSeq = 0;
 function newRow(month: string): DraftRow {
   rowSeq += 1;
-  return { key: rowSeq, supervisorId: "", instituteId: "", visitType: "supervisory", date: `${month}-01` };
+  return {
+    key: rowSeq,
+    supervisorId: "",
+    instituteId: "",
+    administrationId: "",
+    visitType: "supervisory",
+    date: `${month}-01`,
+  };
 }
 
-/** بناء الخطة الشهرية: يختار المدير الموجّه والمعهد والنوع واليوم. */
+/** بناء الخطة الشهرية: يختار المدير الموجّه والهدف (معهد/إدارة) والنوع واليوم. */
 export function MonthlyPlanBuilder({
   supervisors,
   institutes,
+  administrations = [],
   defaultMonth,
 }: {
   supervisors: PlanSupervisorOption[];
   institutes: PlanInstituteOption[];
+  /** الإدارات التعليمية — تُستهدف فقط في متابعة «العضو الفني». */
+  administrations?: PlanAdministrationOption[];
   defaultMonth: string;
 }) {
   const [month, setMonth] = useState(defaultMonth);
@@ -51,6 +73,10 @@ export function MonthlyPlanBuilder({
 
   const patch = (key: number, part: Partial<DraftRow>) =>
     setRows((prev) => prev.map((r) => (r.key === key ? { ...r, ...part } : r)));
+
+  /** الموجّه «العضو الفني» يتابع الإدارات التعليمية فقط. */
+  const followsAdmin = (row: DraftRow) =>
+    supervisors.find((s) => s._id === row.supervisorId)?.role === "technical";
 
   const changeMonth = (value: string) => {
     setMonth(value);
@@ -94,7 +120,14 @@ export function MonthlyPlanBuilder({
                 name="supervisorIds"
                 required
                 value={row.supervisorId}
-                onChange={(e) => patch(row.key, { supervisorId: e.target.value })}
+                onChange={(e) =>
+                  patch(row.key, {
+                    supervisorId: e.target.value,
+                    // الهدف يتغيّر بتغيّر نوع المتابعة
+                    instituteId: "",
+                    administrationId: "",
+                  })
+                }
                 className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm bg-white"
               >
                 <option value="">-- اختر --</option>
@@ -106,25 +139,56 @@ export function MonthlyPlanBuilder({
               </select>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                المعهد *
-              </label>
-              <select
-                name="instituteIds"
-                required
-                value={row.instituteId}
-                onChange={(e) => patch(row.key, { instituteId: e.target.value })}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm bg-white"
-              >
-                <option value="">-- اختر --</option>
-                {institutes.map((ins) => (
-                  <option key={ins._id} value={ins._id}>
-                    {ins.name} — {ins.administrationName}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {followsAdmin(row) ? (
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  الإدارة التعليمية *
+                </label>
+                <select
+                  name="administrationIds"
+                  required
+                  value={row.administrationId}
+                  onChange={(e) =>
+                    patch(row.key, { administrationId: e.target.value })
+                  }
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm bg-white"
+                >
+                  <option value="">-- اختر الإدارة --</option>
+                  {administrations.map((a) => (
+                    <option key={a._id} value={a._id}>
+                      {a.name}
+                      {a.regionName ? ` — ${a.regionName}` : ""}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  العضو الفني يتابع المسابقات والبرامج على مستوى الإدارات التعليمية.
+                </p>
+                {/* حقل موازٍ فارغ للحفاظ على تطابق ترتيب الصفوف في الخادم */}
+                <input type="hidden" name="instituteIds" value="" />
+              </div>
+            ) : (
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  المعهد *
+                </label>
+                <select
+                  name="instituteIds"
+                  required
+                  value={row.instituteId}
+                  onChange={(e) => patch(row.key, { instituteId: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm bg-white"
+                >
+                  <option value="">-- اختر --</option>
+                  {institutes.map((ins) => (
+                    <option key={ins._id} value={ins._id}>
+                      {ins.name} — {ins.administrationName}
+                    </option>
+                  ))}
+                </select>
+                <input type="hidden" name="administrationIds" value="" />
+              </div>
+            )}
 
 
             <div>

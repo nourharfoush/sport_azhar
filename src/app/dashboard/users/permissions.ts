@@ -28,9 +28,10 @@ export interface WorkplaceResult {
 /**
  * حل مكان عمل المستخدم (المنطقة/الإدارة/المعهد) والتحقق أنه داخل نطاق المنشئ.
  * - general: أي مكان في الجمهورية.
- * - region: داخل منطقته فقط (المنطقة نفسها، إداراتها، معاهدها).
+ * - region: داخل منطقته فقط (المنطقة نفسها، إداراتها، معاهدها، أعضائها الفنيين).
  * - administration: داخل إدارته فقط (الإدارة نفسها أو أحد معاهدها).
- * - institute: غير مصرح.
+ * - technical: غير مصرح (مكان عمله محسوم بالمنطقة所属ها المنطقتين).
+ * ملاحظة: «عضو فني» مكان عمله المنطقة حصرًا (لا إدارة ولا معهد).
  * يعيد المعرّفات المحلولة أو رسالة خطأ.
  */
 export async function resolveWorkplace(params: {
@@ -48,6 +49,12 @@ export async function resolveWorkplace(params: {
   if (session.role === "general") {
     if (role === "region") {
       if (!regionId) return { error: "حدّد المنطقة التابع لها المستخدم." };
+      const r = await Region.findById(regionId).select("_id");
+      if (!r) return { error: "المنطقة المحددة غير موجودة." };
+      return { region: String(r._id), administration: null, institute: null };
+    }
+    if (role === "technical") {
+      if (!regionId) return { error: "حدّد المنطقة التي يعمل بها العضو الفني." };
       const r = await Region.findById(regionId).select("_id");
       if (!r) return { error: "المنطقة المحددة غير موجودة." };
       return { region: String(r._id), administration: null, institute: null };
@@ -71,6 +78,10 @@ export async function resolveWorkplace(params: {
   if (session.role === "region") {
     if (!session.regionId) return { error: "حسابك غير مرتبط بمنطقة." };
     if (role === "region") {
+      return { region: session.regionId, administration: null, institute: null };
+    }
+    if (role === "technical") {
+      // العضو الفني مكان عمله منطقته حصرًا
       return { region: session.regionId, administration: null, institute: null };
     }
     if (role === "administration") {
@@ -103,8 +114,8 @@ export async function resolveWorkplace(params: {
   // حساب الإدارة: إدارته أو أحد معاهدها
   if (session.role === "administration") {
     if (!session.administrationId) return { error: "حسابك غير مرتبط بإدارة." };
-    if (role === "region") {
-      return { error: "لا تملك صلاحية إنشاء مستخدم للمنطقة من مستوى الإدارة." };
+    if (role === "region" || role === "technical") {
+      return { error: "لا تملك صلاحية إنشاء مستخدم للمنطقة أو عضو فني من مستوى الإدارة." };
     }
     if (role === "administration") {
       return {
@@ -146,7 +157,7 @@ export async function isInManagerScope(
 
   if (session.role === "region") {
     if (target.role === "general") return false;
-    if (target.role === "region") {
+    if (target.role === "region" || target.role === "technical") {
       return String(target.region ?? "") === String(session.regionId ?? "");
     }
     if (target.role === "administration") {
@@ -165,7 +176,12 @@ export async function isInManagerScope(
   }
 
   if (session.role === "administration") {
-    if (target.role === "general" || target.role === "region") return false;
+    if (
+      target.role === "general" ||
+      target.role === "region" ||
+      target.role === "technical"
+    )
+      return false;
     if (target.role === "administration") {
       return String(target.administration ?? "") === String(session.administrationId ?? "");
     }
@@ -185,8 +201,10 @@ export async function isInManagerScope(
  * (تمنع التصعيد: لا يمنح دورًا أعلى من مستواه).
  */
 export function allowedTargetRoles(session: ManagerSession): Role[] {
-  if (session.role === "general") return ["region", "administration", "institute"];
-  if (session.role === "region") return ["region", "administration", "institute"];
+  if (session.role === "general")
+    return ["region", "technical", "administration", "institute"];
+  if (session.role === "region")
+    return ["region", "technical", "administration", "institute"];
   if (session.role === "administration") return ["administration", "institute"];
   return [];
 }

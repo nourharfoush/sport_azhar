@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { getDashboardStats, getVisibleEvents, getVisibleNews } from "@/lib/data";
 import {
@@ -50,7 +50,9 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {(session.role === "general" || session.role === "region") && (
+        {(session.role === "general" ||
+          session.role === "region" ||
+          session.role === "technical") && (
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <div className="text-xs text-slate-500 font-medium">الإدارات التعليمية</div>
             <div className="text-3xl font-extrabold text-emerald-800 mt-2">

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import {
@@ -79,7 +79,8 @@ export function PlanningTabs({
   const canManageItem = (r: PlanningRecordItem) => {
     if (userRole === "general") return true;
     if (!r.region && !r.administration && !r.institute) return false;
-    if (userRole === "region") return r.region === userRegionId;
+    if (userRole === "region" || userRole === "technical")
+      return r.region === userRegionId;
     if (userRole === "administration") return r.administration === userAdminId;
     if (userRole === "institute") return r.institute === userInstituteId;
     return false;

@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+﻿import { Types } from "mongoose";
 import { dbConnect } from "@/lib/db";
 import { Region } from "@/models/Region";
 import { Administration } from "@/models/Administration";
@@ -40,7 +40,8 @@ export async function getScopedAdministrationIds(
   switch (user.role) {
     case "general":
       return null;
-    case "region": {
+    case "region":
+    case "technical": {
       const admins = await Administration.find({ region: user.regionId }).select("_id");
       return admins.map((a) => a._id as Types.ObjectId);
     }
@@ -308,7 +309,7 @@ export async function getDashboardStats(
   const regionFilter =
     user.role === "general"
       ? {}
-      : user.role === "region"
+      : user.role === "region" || user.role === "technical"
         ? { _id: user.regionId }
         : { _id: null };
 

@@ -1,4 +1,4 @@
-import {
+﻿import {
   GENERAL_ONLY_NEWS_CATEGORIES,
   ROLES,
   isGeneralOnlyCategory,
@@ -13,7 +13,9 @@ export function buildEventFilter(user: SessionUser): Record<string, unknown> {
   switch (user.role) {
     case "general":
       return {};
+    // العضو الفني بالمنطقة يتابع المسابقات والبرامج على مستوى منطقته
     case "region":
+    case "technical":
       return {
         $or: [
           { scope: "general" },
@@ -57,6 +59,7 @@ export function buildNewsFilter(user: SessionUser): Record<string, unknown> {
     case "general":
       return {};
     case "region":
+    case "technical":
       return {
         $or: [
           generalOnly,
@@ -111,7 +114,9 @@ export function buildPlanningFilter(
   switch (user.role) {
     case "general":
       return {};
+    // العضو الفني يرى سجلات تخطيط منطقته (ويعدّل ما يخصّها)
     case "region":
+    case "technical":
       return { $or: [{ region: user.regionId ?? null }, { region: null }] };
     case "administration":
       return {
@@ -146,7 +151,7 @@ export function canManagePlanningItem(
   const isCentral = !item.region && !item.administration && !item.institute;
   if (isCentral) return false;
 
-  if (user.role === "region") {
+  if (user.role === "region" || user.role === "technical") {
     return String(item.region ?? "") === String(user.regionId ?? "");
   }
   if (user.role === "administration") {
@@ -169,6 +174,7 @@ export function buildGiftedFilter(user: SessionUser): Record<string, unknown> {
     case "general":
       return {};
     case "region":
+    case "technical":
       return { region: user.regionId ?? null };
     case "administration":
       return { administration: user.administrationId ?? null };
@@ -197,7 +203,7 @@ export function canManageGiftedItem(
 ): boolean {
   if (user.role === "general") return true;
 
-  if (user.role === "region") {
+  if (user.role === "region" || user.role === "technical") {
     if (!user.regionId) return false;
     return String(item.region ?? "") === String(user.regionId);
   }
@@ -224,6 +230,8 @@ export function buildInstituteFilter(user: SessionUser): Record<string, unknown>
     case "general":
       return {};
     case "region":
+      return {};
+    case "technical":
       return {};
     case "administration":
       return { administration: user.administrationId };
@@ -289,7 +297,7 @@ export function scopedOwnershipForRole(user: SessionUser): {
   if (user.role === "general") {
     return { scope: "general", region: null, administration: null };
   }
-  if (user.role === "region") {
+  if (user.role === "region" || user.role === "technical") {
     return { scope: "region", region: user.regionId, administration: null };
   }
   return {
@@ -302,7 +310,7 @@ export function scopedOwnershipForRole(user: SessionUser): {
 /**
  * هل يملك المستخدم تعديل/حذف هذا العنصر في نطاق صلاحياته؟
  * - الإدارة العامة: كل العناصر.
- * - المنطقة الأزهرية: عناصر منطقتها فقط (ولا تتحكم في العناصر المركزية).
+ * - المنطقة الأزهرية والعضو الفني بها: عناصر منطقتها فقط (ولا تتحكم في العناصر المركزية).
  * - الإدارة التعليمية: عناصر إدارتها التعليمية فقط.
  * - المعهد: لا يملك أي تحكم (متابعة فقط).
  */
@@ -312,7 +320,7 @@ export function canManageScopedItem(
 ): boolean {
   if (user.role === "general") return true;
 
-  if (user.role === "region") {
+  if (user.role === "region" || user.role === "technical") {
     if (item.scope === "general") return false;
     return String(item.region ?? "") === String(user.regionId ?? "");
   }

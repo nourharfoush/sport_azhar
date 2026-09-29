@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import {
@@ -57,7 +57,7 @@ export function EventList({
   /** نفس منطق الصلاحيات المطبّق على السيرفر (lib/rbac -> canManageScopedItem). */
   const canManageEvent = (e: EventItem) => {
     if (userRole === "general") return true;
-    if (userRole === "region") {
+    if (userRole === "region" || userRole === "technical") {
       return e.scope !== "general" && e.region === userRegionId;
     }
     if (userRole === "administration") {

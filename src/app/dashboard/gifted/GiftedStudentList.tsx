@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import type { Role } from "@/types";
@@ -55,7 +55,8 @@ export function GiftedStudentList({
   /** نفس منطق الصلاحيات المطبّق على السيرفر (lib/rbac -> canManageGiftedItem). */
   const canManageItem = (s: GiftedStudentItem) => {
     if (userRole === "general") return true;
-    if (userRole === "region") return s.region === userRegionId;
+    if (userRole === "region" || userRole === "technical")
+      return s.region === userRegionId;
     if (userRole === "administration") return s.administration === userAdminId;
     if (userRole === "institute") return s.institute === userInstituteId;
     return false;

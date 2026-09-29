@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/auth";
+﻿import { getSession } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import { Region, type IRegion } from "@/models/Region";
 import { Administration, type IAdministration } from "@/models/Administration";
@@ -27,7 +27,7 @@ export default async function EntitiesPage() {
   const adminFilter =
     adminIds === null
       ? {}
-      : session.role === "region"
+      : session.role === "region" || session.role === "technical"
         ? { region: session.regionId }
         : { _id: { $in: adminIds } };
 

@@ -4,6 +4,7 @@ export const ROLES = [
   "region", // المنطقة الأزهرية
   "administration", // الإدارة التعليمية بالمناطق الأزهرية
   "institute", // المعهد الأزهري
+  "technical", // عضو فني بالمنطقة (يشرف على الإدارات التعليمية)
 ] as const;
 
 export type Role = (typeof ROLES)[number];
@@ -13,6 +14,17 @@ export const ROLE_LABELS: Record<Role, string> = {
   region: "المنطقة الأزهرية",
   administration: "الإدارة التعليمية",
   institute: "المعهد الأزهري",
+  technical: "عضو فني",
+};
+
+/** وصف مختصر لكل مسمى وظيفي (يُعرض في صفحة المستخدمين ولوحة التحكم). */
+export const ROLE_DESCRIPTIONS: Record<Role, string> = {
+  general: "رؤية شاملة لكل المناطق وإطلاق بطولات الجمهورية.",
+  region: "إطلاق بطولات المنطقة ومتابعة إداراتها التعليمية.",
+  administration: "الإشراف على المعاهد وتجميع بيانات معاهدها.",
+  institute: "تسجيل الفرق والطلاب وإدارة المشاركة.",
+  technical:
+    "عضو فني بالمنطقة: يتابع المسابقات والبرامج على مستوى الإدارات التعليمية فقط، ويشترط مكان عمله أن يكون المنطقة.",
 };
 
 // حالة متابعة الفعالية/المسابقة لكل معهد
@@ -345,6 +357,75 @@ export const WEEKDAY_LABELS = [
   "الجمعة",
   "السبت",
 ] as const;
+
+// ─────────────────────────────────────────────────────────────
+// متابعة الإدارات التعليمية (مهمة «عضو فني» بالمنطقة)
+// ─────────────────────────────────────────────────────────────
+
+/** حالة تنفيذ المسابقة/البرنامج على مستوى الإدارة التعليمية. */
+export const ADMIN_PROGRAM_STATUS = [
+  "executed",
+  "ongoing",
+  "not_started",
+  "no_teams",
+] as const;
+
+export type AdminProgramStatus = (typeof ADMIN_PROGRAM_STATUS)[number];
+
+export const ADMIN_PROGRAM_STATUS_LABELS: Record<AdminProgramStatus, string> = {
+  executed: "تم التنفيذ بالكامل",
+  ongoing: "جاري تنفيذها",
+  not_started: "لم تبدأ بعد",
+  no_teams: "لا توجد فرق مشاركة",
+};
+
+/** حالة استيفاء بيانات المتابعة من الإدارة التعليمية. */
+export const ADMIN_DATA_COMPLETENESS = [
+  "complete",
+  "partial",
+  "missing",
+] as const;
+
+export type AdminDataCompleteness = (typeof ADMIN_DATA_COMPLETENESS)[number];
+
+export const ADMIN_DATA_COMPLETENESS_LABELS: Record<
+  AdminDataCompleteness,
+  string
+> = {
+  complete: "مكتملة",
+  partial: "ناقصة جزئيًا",
+  missing: "غير مُرسلة",
+};
+
+/**
+ * محتوى تقرير المتابعة اليومي على مستوى **الإدارة التعليمية**
+ * (يستخدمه «عضو فني» بالمنطقة لمتابعة المسابقات والبرامج فقط).
+ */
+export interface AdministrationReportBody {
+  /** اسم المسابقة أو البرنامج المتابَع. */
+  programName?: string;
+  /** المسار: برامج ومشروعات | مسابقات رياضية. */
+  programCategory?: SportCategory;
+  /** حالة تنفيذ المسابقة/البرنامج. */
+  programStatus?: AdminProgramStatus;
+  /** عدد الفرق المشاركة من المعاهد التابعة للإدارة. */
+  teamsCount?: number;
+  /** عدد الطلاب المشاركين. */
+  studentsCount?: number;
+  /** حالة استيفاء الإدارة لبيانات المتابعة. */
+  dataCompleteness?: AdminDataCompleteness;
+  /** التزام الإدارة بإرسال كشوف المشاركة في الموعد. */
+  commitmentsDone?: YesNo;
+  /** وجود السجلات والكشوف لدى الإدارة. */
+  recordsExistence?: Existence;
+  /** وجود الخطة المالية لدى الإدارة. */
+  financialPlan?: Existence;
+  financialPlanExecution?: PlanExecution;
+  positives?: string;
+  negatives?: string;
+  suggestions?: string;
+  generalNotes?: string;
+}
 
 export type Sport = (typeof SPORTS)[number];
 

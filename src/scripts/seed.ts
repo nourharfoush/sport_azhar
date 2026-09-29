@@ -185,6 +185,15 @@ async function run() {
     institute: inst1._id,
   });
 
+  // 4ب. عضو فني بالمنطقة (مكان عمله المنطقة فقط)
+  await User.create({
+    name: "عضو فني بمنطقة القاهرة",
+    email: "cairo.technical@azhar.edu.eg",
+    passwordHash,
+    role: "technical",
+    region: cairo._id,
+  });
+
   // 5. مسابقة عامة منشورة
   const event1 = await Event.create({
     title: "بطولة الجمهورية الأزهرية لكرة القدم للمرحلة الثانوية",
@@ -337,6 +346,7 @@ async function run() {
   console.log("2. المنطقة الأزهرية:   cairo.region@azhar.edu.eg");
   console.log("3. الإدارة التعليمية:  nasr.admin@azhar.edu.eg");
   console.log("4. المعهد الأزهري:    model.institute@azhar.edu.eg");
+  console.log("5. عضو فني بالمنطقة:  cairo.technical@azhar.edu.eg");
   console.log("-----------------------------------------");
 
   await mongoose.disconnect();

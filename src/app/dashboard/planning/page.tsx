@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/auth";
+﻿import { getSession } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import {
   getGiftedInstituteOptions,
@@ -19,6 +19,7 @@ import {
   MONTH_LABELS,
   displayName,
   type DailyReportStatus,
+  type Role,
   type VisitType,
 } from "@/types";
 import { PlanningTabs } from "./PlanningTabs";
@@ -83,6 +84,13 @@ export default async function PlanningPage() {
     name: string;
     regionName: string;
     administrationName: string;
+    role: Role;
+  }> = [];
+  // الإدارات التعليمية (هدف متابعة «العضو الفني»)
+  let administrationOptions: Array<{
+    _id: string;
+    name: string;
+    regionName: string;
   }> = [];
 
   if (isPlanManager) {
@@ -115,10 +123,17 @@ export default async function PlanningPage() {
     supervisorOptions = supervisors.map((s) => ({
       _id: String(s._id),
       name: displayName(s.name),
+      role: s.role as Role,
       regionName: s.region ? (regionName.get(String(s.region)) ?? "") : "",
       administrationName: s.administration
         ? (adminName.get(String(s.administration)) ?? "")
         : "",
+    }));
+
+    administrationOptions = admins.map((a) => ({
+      _id: String(a._id),
+      name: a.name,
+      regionName: a.region ? (regionName.get(String(a.region)) ?? "") : "",
     }));
   }
 
@@ -126,6 +141,10 @@ export default async function PlanningPage() {
   const visitFilter: Record<string, unknown> = { month };
   if (session.role === "region" && session.regionId) {
     visitFilter.region = session.regionId;
+  } else if (session.role === "technical") {
+    // العضو الفني يتابع مواعيده هو فقط، وهي متابعات لإدارات تعليمية
+    visitFilter.supervisor = session.id;
+    visitFilter.kind = "administration";
   } else if (session.role === "administration" && session.administrationId) {
     visitFilter.administration = session.administrationId;
   } else if (session.role === "institute" && session.instituteId) {
@@ -159,6 +178,7 @@ export default async function PlanningPage() {
       instituteType: inst?.type || "مشترك",
       administrationName: refName(v.administration) ?? "—",
       regionName: refName(v.region) ?? "—",
+      kind: ((v.kind ?? "institute") as "institute" | "administration"),
       reportStatus: (r?.status as DailyReportStatus | undefined) ?? "pending",
       body: {},
     };
@@ -194,6 +214,7 @@ export default async function PlanningPage() {
                 <MonthlyPlanBuilder
                   supervisors={supervisorOptions}
                   institutes={fullInstituteOptions}
+                  administrations={administrationOptions}
                   defaultMonth={month}
                 />
               </section>

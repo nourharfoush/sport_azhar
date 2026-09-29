@@ -12,13 +12,21 @@ import { MonthlyVisit } from "@/models/MonthlyVisit";
 import { DailyReport } from "@/models/DailyReport";
 import { VISIT_TYPES, type SessionUser, type VisitType } from "@/types";
 import { isPlanManager, supervisedRolesFor } from "./planScope";
-import { missingReportFields, submitWindow } from "./reportRules";
 import {
+  missingReportFields,
+  missingAdminReportFields,
+  submitWindow,
+} from "./reportRules";
+import {
+  ADMIN_DATA_COMPLETENESS,
+  ADMIN_PROGRAM_STATUS,
   ATTENDANCE,
   COMPLETENESS,
   EXISTENCE,
   PLAN_EXECUTION,
+  SPORT_CATEGORIES,
   YES_NO,
+  type AdministrationReportBody,
   type DailyReportBody,
 } from "@/types";
 
@@ -108,6 +116,64 @@ function parseReportBody(formData: FormData): DailyReportBody {
   return body;
 }
 
+/**
+ * يقرأ نموذج تقرير متابعة الإدارة التعليمية إلى كائن AdministrationReportBody.
+ * الحقول الشرطية تُحفظ فقط عندما يتحقق شرطها.
+ */
+function parseAdminReportBody(formData: FormData): AdministrationReportBody {
+  const num = (k: string): number | undefined => {
+    const raw = String(formData.get(k) ?? "").trim();
+    if (raw === "") return undefined;
+    const n = Number(raw);
+    return Number.isFinite(n) && n >= 0 ? n : undefined;
+  };
+  const str = (k: string): string | undefined => {
+    const raw = String(formData.get(k) ?? "").trim();
+    return raw === "" ? undefined : raw;
+  };
+  const oneOf = <T extends string>(k: string, allowed: readonly T[]): T | undefined => {
+    const raw = String(formData.get(k) ?? "").trim() as T;
+    return allowed.includes(raw) ? raw : undefined;
+  };
+
+  const body: AdministrationReportBody = {};
+
+  const programName = str("programName");
+  if (programName) body.programName = programName;
+  const programCategory = oneOf("programCategory", SPORT_CATEGORIES);
+  if (programCategory) body.programCategory = programCategory;
+  const programStatus = oneOf("programStatus", ADMIN_PROGRAM_STATUS);
+  if (programStatus) body.programStatus = programStatus;
+  if (programStatus !== "no_teams") {
+    const teamsCount = num("teamsCount");
+    if (teamsCount !== undefined) body.teamsCount = teamsCount;
+    const studentsCount = num("studentsCount");
+    if (studentsCount !== undefined) body.studentsCount = studentsCount;
+  }
+  const dataCompleteness = oneOf("dataCompleteness", ADMIN_DATA_COMPLETENESS);
+  if (dataCompleteness) body.dataCompleteness = dataCompleteness;
+  const commitmentsDone = oneOf("commitmentsDone", YES_NO);
+  if (commitmentsDone) body.commitmentsDone = commitmentsDone;
+  const recordsExistence = oneOf("recordsExistence", EXISTENCE);
+  if (recordsExistence) body.recordsExistence = recordsExistence;
+  const financialPlan = oneOf("financialPlan", EXISTENCE);
+  if (financialPlan) body.financialPlan = financialPlan;
+  if (financialPlan === "present") {
+    const execution = oneOf("financialPlanExecution", PLAN_EXECUTION);
+    if (execution) body.financialPlanExecution = execution;
+  }
+  const positives = str("positives");
+  if (positives) body.positives = positives;
+  const negatives = str("negatives");
+  if (negatives) body.negatives = negatives;
+  const suggestions = str("suggestions");
+  if (suggestions) body.suggestions = suggestions;
+  const generalNotes = str("generalNotes");
+  if (generalNotes) body.generalNotes = generalNotes;
+
+  return body;
+}
+
 type PlanActionResult = { success: boolean; error?: string };
 
 /** يقرأ قيمة حقل من FormData كسلسلة مقصوصة. */
@@ -133,12 +199,19 @@ export async function saveMonthlyPlanAction(
     return { success: false, error: "صيغة الشهر غير صحيحة (المتوقع YYYY-MM)." };
   }
 
-  // المواعيد كحقول متوازية: supervisorIds[] instituteIds[] visitTypes[] dates[]
+  // المواعيد كحقول متوازية:
+  // supervisorIds[] instituteIds[] administrationIds[] visitTypes[] dates[]
   const supervisors = formData.getAll("supervisorIds").map(String);
   const institutes = formData.getAll("instituteIds").map(String);
+  const administrations = formData.getAll("administrationIds").map(String);
   const visitTypes = formData.getAll("visitTypes").map(String);
   const dates = formData.getAll("dates").map(String);
-  const len = Math.max(supervisors.length, institutes.length, visitTypes.length, dates.length);
+  const len = Math.max(
+    supervisors.length,
+    institutes.length,
+    visitTypes.length,
+    dates.length,
+  );
 
   if (len === 0) {
     return { success: false, error: "أضف موعدًا واحدًا على الأقل للخطة." };
@@ -148,12 +221,15 @@ export async function saveMonthlyPlanAction(
 
   // نطاق المدير
   const regionDocs = await Region.find(
-    session.role === "region" && session.regionId ? { _id: session.regionId } : {},
+    (session.role === "region" || session.role === "technical") && session.regionId
+      ? { _id: session.regionId }
+      : {},
   ).lean();
   const adminDocs = await Administration.find(
     session.role === "administration" && session.administrationId
       ? { _id: session.administrationId }
-      : session.role === "region" && session.regionId
+      : (session.role === "region" || session.role === "technical") &&
+          session.regionId
         ? { region: session.regionId }
         : {},
   ).lean();
@@ -170,20 +246,22 @@ export async function saveMonthlyPlanAction(
 
   for (let idx = 0; idx < len; idx++) {
     const supervisorId = supervisors[idx];
-    const instituteId = institutes[idx];
+    const instituteId = institutes[idx] ?? "";
+    const administrationId = administrations[idx] ?? "";
     const visitType = visitTypes[idx];
     const dateRaw = dates[idx];
 
-    if (!supervisorId || !instituteId || !visitType || !dateRaw) {
+    if (!supervisorId || !visitType || !dateRaw) {
       return { success: false, error: `الموعد رقم ${idx + 1} غير مكتمل.` };
+    }
+    if (!instituteId && !administrationId) {
+      return {
+        success: false,
+        error: `اختر هدف المتابعة (معهد أو إدارة تعليمية) في الموعد رقم ${idx + 1}.`,
+      };
     }
     if (!VISIT_TYPES.includes(visitType as VisitType)) {
       return { success: false, error: `نوع الموعد رقم ${idx + 1} غير صالح.` };
-    }
-
-    const inst = instById.get(instituteId);
-    if (!inst) {
-      return { success: false, error: `المعهد في الموعد رقم ${idx + 1} خارج نطاقك.` };
     }
 
     // الموجّه: لازم يكون دوره من المستويات التي يشرف عليها هذا المدير
@@ -219,23 +297,71 @@ export async function saveMonthlyPlanAction(
       return { success: false, error: `تاريخ الموعد رقم ${idx + 1} خارج الشهر المحدد.` };
     }
 
-    const admin = adminById.get(String(inst.administration));
-    if (!admin?.region) {
-      return { success: false, error: `تعذّر تحديد منطقة المعهد في الموعد رقم ${idx + 1}.` };
+    if (instituteId) {
+      // ── متابعة معهد ──
+      if ((supervisor.role as string) === "technical") {
+        return {
+          success: false,
+          error: `الموعد رقم ${idx + 1}: العضو الفني يتابع الإدارات التعليمية فقط.`,
+        };
+      }
+      const inst = instById.get(instituteId);
+      if (!inst) {
+        return { success: false, error: `المعهد في الموعد رقم ${idx + 1} خارج نطاقك.` };
+      }
+      const admin = adminById.get(String(inst.administration));
+      if (!admin?.region) {
+        return { success: false, error: `تعذّر تحديد منطقة المعهد في الموعد رقم ${idx + 1}.` };
+      }
+      docs.push({
+        month,
+        supervisor: new Types.ObjectId(supervisorId),
+        region: admin.region,
+        administration: inst.administration,
+        institute: inst._id,
+        kind: "institute",
+        visitType: visitType as VisitType,
+        date,
+        notes: "",
+        createdBy: new Types.ObjectId(session.id),
+        createdByRole: session.role,
+      });
+    } else {
+      // ── متابعة إدارة تعليمية (العضو الفني بالمنطقة) ──
+      // «العضو الفني» يتابع الإدارات التعليمية فقط: يُتحقق من دوره صراحةً
+      if ((supervisor.role as string) !== "technical") {
+        return {
+          success: false,
+          error: `الموعد رقم ${idx + 1}: متابعة الإدارة التعليمية مخصّصة للعضو الفني بالمنطقة.`,
+        };
+      }
+      const admin = adminById.get(administrationId);
+      if (!admin) {
+        return {
+          success: false,
+          error: `الإدارة التعليمية في الموعد رقم ${idx + 1} خارج نطاقك.`,
+        };
+      }
+      if (!admin.region) {
+        return {
+          success: false,
+          error: `تعذّر تحديد منطقة الإدارة التعليمية في الموعد رقم ${idx + 1}.`,
+        };
+      }
+      docs.push({
+        month,
+        supervisor: new Types.ObjectId(supervisorId),
+        region: admin.region,
+        administration: admin._id,
+        institute: null,
+        kind: "administration",
+        visitType: visitType as VisitType,
+        date,
+        notes: "",
+        createdBy: new Types.ObjectId(session.id),
+        createdByRole: session.role,
+      });
     }
-
-    docs.push({
-      month,
-      supervisor: new Types.ObjectId(supervisorId),
-      region: admin.region,
-      administration: inst.administration,
-      institute: inst._id,
-      visitType: visitType as VisitType,
-      date,
-      notes: "",
-      createdBy: new Types.ObjectId(session.id),
-      createdByRole: session.role,
-    });
   }
 
   try {
@@ -265,7 +391,7 @@ async function canManageVisit(
 ): Promise<boolean> {
   if (!isPlanManager(session.role)) return false;
   if (session.role === "general") return true;
-  if (session.role === "region") {
+  if (session.role === "region" || session.role === "technical") {
     return String(visit.region ?? "") === String(session.regionId ?? "");
   }
   if (session.role === "administration") {
@@ -372,7 +498,11 @@ export async function saveDailyReportAction(
   }
 
   const isSubmit = fd(formData, "intent") === "submitted";
-  const body = parseReportBody(formData);
+  // متابعة الإدارات التعليمية (العضو الفني) لها تقرير مستقل عن تقرير المعهد
+  const isAdminVisit = (visit.kind ?? "institute") === "administration";
+  const body: DailyReportBody | AdministrationReportBody = isAdminVisit
+    ? parseAdminReportBody(formData)
+    : parseReportBody(formData);
 
   if (isSubmit) {
     // 1) القيد الزمني: الإرسال في يوم المتابعة فقط (بتوقيت مصر)
@@ -381,8 +511,17 @@ export async function saveDailyReportAction(
       return { success: false, error: win.message };
     }
     // 2) التحقق من اكتمال الحقول
-    const inst = await Institute.findById(visit.institute).select("type");
-    const missing = missingReportFields(body, inst?.type ?? "مشترك");
+    const missing = isAdminVisit
+      ? missingAdminReportFields(body as AdministrationReportBody)
+      : await (async () => {
+          const inst = visit.institute
+            ? await Institute.findById(visit.institute).select("type")
+            : null;
+          return missingReportFields(
+            body as DailyReportBody,
+            inst?.type ?? "مشترك",
+          );
+        })();
     if (missing.length) {
       return {
         success: false,

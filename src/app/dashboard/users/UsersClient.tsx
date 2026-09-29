@@ -18,8 +18,10 @@ import type {
 
 /** الأدوار المتاحة للمنشئ الحالي في القائمة. */
 export function roleOptionsFor(managerRole: Role): Role[] {
-  if (managerRole === "general") return ["region", "administration", "institute"];
-  if (managerRole === "region") return ["region", "administration", "institute"];
+  if (managerRole === "general")
+    return ["region", "technical", "administration", "institute"];
+  if (managerRole === "region")
+    return ["region", "technical", "administration", "institute"];
   if (managerRole === "administration") return ["administration", "institute"];
   return ["institute"];
 }
@@ -93,12 +95,18 @@ export function WorkplaceFields(props: WorkplaceFieldsProps) {
     ? institutes.filter((i) => i.administrationId === currentAdminId)
     : [];
 
+  // «عضو فني» مكان عمله المنطقة، فاختيار المنطقة مطلوب له (ولـ«region»)
+  const needsRegion =
+    selRole === "region" || (selRole === "technical" && managerRole === "general");
+
   // هل يظهر اختيار المنطقة للعامة (خطوة وسيطة لمستوى إدارة/معهد)
   const showRegionPicker =
-    selRole &&
+    !!selRole &&
     selRole !== "general" &&
     managerRole === "general" &&
-    (selRole === "region" || selAdmin === "");
+    (selRole === "region" ||
+      selRole === "technical" ||
+      selAdmin === "");
 
   return (
     <>
@@ -130,11 +138,11 @@ export function WorkplaceFields(props: WorkplaceFieldsProps) {
       {showRegionPicker && (
         <div>
           <label className="block text-xs font-bold text-slate-700 mb-1.5">
-            المنطقة الأزهرية {selRole === "region" ? "*" : "(اختياري لتصفية الإدارات)"}
+            المنطقة الأزهرية {needsRegion ? "*" : "(اختياري لتصفية الإدارات)"}
           </label>
           <select
-            name={selRole === "region" ? "regionId" : undefined}
-            required={selRole === "region"}
+            name={needsRegion ? "regionId" : undefined}
+            required={needsRegion}
             value={selRegion}
             onChange={(e) => {
               setSelRegion(e.target.value);
@@ -149,10 +157,16 @@ export function WorkplaceFields(props: WorkplaceFieldsProps) {
               </option>
             ))}
           </select>
+          {selRole === "technical" && (
+            <p className="text-[11px] text-slate-500 mt-1">
+              مكان عمل العضو الفني هو المنطقة فقط، ويقوم بمتابعة المسابقات والبرامج
+              الخاصة بإداراتها التعليمية.
+            </p>
+          )}
         </div>
       )}
 
-      {managerRole !== "general" && selRole === "region" && (
+      {managerRole !== "general" && (selRole === "region" || selRole === "technical") && (
         <input type="hidden" name="regionId" value={managerRegionId || ""} />
       )}
 

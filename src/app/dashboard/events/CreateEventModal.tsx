@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   GENDERS,
   GENDER_LABELS,
@@ -45,7 +45,11 @@ export function CreateEventModal({
 }: Props) {
   // مستوى المسابقة الافتراضي حسب الدور
   const defaultScope: EventScope =
-    userRole === "general" ? "general" : userRole === "region" ? "region" : "administration";
+    userRole === "general"
+      ? "general"
+      : userRole === "region" || userRole === "technical"
+        ? "region"
+        : "administration";
   const [scope, setScope] = useState<EventScope>(defaultScope);
   const [gender, setGender] = useState<Gender>("بنين");
   const [activity, setActivity] = useState<ActivityState>(() =>
@@ -55,7 +59,8 @@ export function CreateEventModal({
   if (!open) return null;
 
   /** المنطقة والإدارة العامة تختاران بين كل المستويات */
-  const canChooseScope = userRole === "region" || userRole === "general";
+  const canChooseScope =
+    userRole === "region" || userRole === "technical" || userRole === "general";
 
   /** عند اختيار إدارة من الإدارة العامة نحتاج كل الإدارات وكل المناطق */
   const canPickRegion = userRole === "general" && scope === "region";

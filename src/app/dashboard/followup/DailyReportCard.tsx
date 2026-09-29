@@ -6,13 +6,18 @@ import {
   updateVisitAction,
   deleteVisitAction,
 } from "./planActions";
-import { ReportFormFields } from "./ReportForm";
-import { visibleReportFields, isMixedInstitute } from "./reportRules";
+import { ReportFormFields, AdministrationReportFormFields } from "./ReportForm";
+import {
+  visibleReportFields,
+  visibleAdminReportFields,
+  isMixedInstitute,
+} from "./reportRules";
 import {
   DAILY_REPORT_STATUS_LABELS,
   VISIT_TYPES,
   VISIT_TYPE_LABELS,
   WEEKDAY_LABELS,
+  type AdministrationReportBody,
   type DailyReportBody,
   type DailyReportStatus,
   type VisitType,
@@ -29,7 +34,9 @@ export interface VisitRow {
   administrationName: string;
   regionName: string;
   reportStatus: DailyReportStatus;
-  body: DailyReportBody;
+  /** institute: متابعة معهد | administration: متابعة إدارة تعليمية. */
+  kind: "institute" | "administration";
+  body: DailyReportBody | AdministrationReportBody;
 }
 
 function fmtDate(iso: string): { weekday: string; date: string } {
@@ -55,6 +62,7 @@ function fmtDate(iso: string): { weekday: string; date: string } {
  * تتضمّن: ترويسة + بيانات الموعد + جدول الحقول + خانات التوقيع.
  */
 function ReportSheet({
+  kind,
   instituteName,
   instituteType,
   administrationName,
@@ -64,6 +72,7 @@ function ReportSheet({
   supervisorName,
   body,
 }: {
+  kind: "institute" | "administration";
   instituteName: string;
   instituteType: string;
   administrationName: string;
@@ -71,10 +80,13 @@ function ReportSheet({
   visitDate: string;
   visitType: string;
   supervisorName: string;
-  body: DailyReportBody;
+  body: DailyReportBody | AdministrationReportBody;
 }) {
+  const isAdmin = kind === "administration";
   const isMixed = isMixedInstitute(instituteType);
-  const fields = visibleReportFields(body ?? {}, instituteType);
+  const fields = isAdmin
+    ? visibleAdminReportFields((body ?? {}) as AdministrationReportBody)
+    : visibleReportFields((body ?? {}) as DailyReportBody, instituteType);
   const d = new Date(visitDate);
   const dateStr = Number.isNaN(d.getTime())
     ? visitDate
@@ -101,21 +113,32 @@ function ReportSheet({
         <header className="text-center border-b-2 border-emerald-800 pb-3 mb-4 print:mb-3">
           <p className="text-[11px] text-slate-600">الأزهر الشريف</p>
           <h3 className="text-base font-extrabold text-slate-900 mt-0.5">
-            تقرير متابعة يومية
+            {isAdmin ? "تقرير متابعة إدارة تعليمية" : "تقرير متابعة يومية"}
           </h3>
         </header>
 
         <table className="w-full text-right border-collapse text-[11px] mb-4 print:mb-3">
           <tbody>
-            <tr>
-              <th className="w-1/6 py-1.5 px-2 bg-slate-50 border border-slate-300 font-bold text-slate-700">
-                المعهد
-              </th>
-              <td className="py-1.5 px-2 border border-slate-300 font-semibold text-slate-900">
-                {instituteName}
-                {instituteType ? ` (${instituteType})` : ""}
-              </td>
-            </tr>
+            {isAdmin ? (
+              <tr>
+                <th className="w-1/6 py-1.5 px-2 bg-slate-50 border border-slate-300 font-bold text-slate-700">
+                  الإدارة التعليمية
+                </th>
+                <td className="py-1.5 px-2 border border-slate-300 font-semibold text-slate-900">
+                  {administrationName || "—"}
+                </td>
+              </tr>
+            ) : (
+              <tr>
+                <th className="w-1/6 py-1.5 px-2 bg-slate-50 border border-slate-300 font-bold text-slate-700">
+                  المعهد
+                </th>
+                <td className="py-1.5 px-2 border border-slate-300 font-semibold text-slate-900">
+                  {instituteName}
+                  {instituteType ? ` (${instituteType})` : ""}
+                </td>
+              </tr>
+            )}
             <tr>
               <th className="py-1.5 px-2 bg-slate-50 border border-slate-300 font-bold text-slate-700">
                 الإدارة / المنطقة
@@ -177,7 +200,9 @@ function ReportSheet({
                     idx % 2 === 0 ? "bg-slate-50" : "bg-white"
                   }`}
                 >
-                  {f.format(body ?? {})}
+                  {isAdmin
+                    ? f.format((body ?? {}) as AdministrationReportBody)
+                    : f.format((body ?? {}) as DailyReportBody)}
                 </td>
               </tr>
             ))}
@@ -199,7 +224,7 @@ function ReportSheet({
           </div>
         </div>
 
-        {isMixed && (
+        {isMixed && !isAdmin && (
           <p className="mt-3 text-[10px] text-slate-500 text-center">
             المعهد من النوع «مشترك» — لذلك يُسجَّل تفصيل عدد البنات والبنين.
           </p>
@@ -246,7 +271,11 @@ export function DailyReportCard({
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold text-slate-900">{visit.instituteName}</span>
+            <span className="font-bold text-slate-900">
+              {visit.kind === "administration"
+                ? visit.administrationName
+                : visit.instituteName}
+            </span>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold border border-slate-200">
               {VISIT_TYPE_LABELS[visit.visitType]}
             </span>
@@ -343,6 +372,7 @@ export function DailyReportCard({
 
       {(locked || (isSupervisor && !open)) && (
         <ReportSheet
+          kind={visit.kind}
           instituteName={visit.instituteName}
           instituteType={visit.instituteType}
           administrationName={visit.administrationName}
@@ -359,13 +389,22 @@ export function DailyReportCard({
         <div className="mt-4 pt-4 border-t border-slate-100">
           <form action={saveAction} className="space-y-3">
             <input type="hidden" name="visitId" value={visit._id} />
-            <ReportFormFields
-              instituteName={visit.instituteName}
-              instituteType={visit.instituteType}
-              body={visit.body ?? {}}
-              pending={saving}
-              visitDate={visit.date}
-            />
+            {visit.kind === "administration" ? (
+              <AdministrationReportFormFields
+                administrationName={visit.administrationName}
+                body={(visit.body ?? {}) as AdministrationReportBody}
+                pending={saving}
+                visitDate={visit.date}
+              />
+            ) : (
+              <ReportFormFields
+                instituteName={visit.instituteName}
+                instituteType={visit.instituteType}
+                body={(visit.body ?? {}) as DailyReportBody}
+                pending={saving}
+                visitDate={visit.date}
+              />
+            )}
             {saveState?.error && (
               <p className="text-xs text-rose-700">{saveState.error}</p>
             )}

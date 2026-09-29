@@ -16,7 +16,7 @@ export default async function EventsPage() {
 
   let administrations: { _id: string; name: string }[] = [];
   let regions: { _id: string; name: string }[] = [];
-  if (isGeneral || session.role === "region") {
+  if (isGeneral || session.role === "region" || session.role === "technical") {
     await dbConnect();
     const adminFilter = isGeneral ? {} : { region: session.regionId };
     const [admins, regs] = await Promise.all([

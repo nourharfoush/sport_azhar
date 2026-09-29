@@ -4,12 +4,17 @@
  * (ملف بلا "use server" وبلا استيراد Mongoose ليستخدمه العميل أيضًا.)
  */
 import {
+  ADMIN_DATA_COMPLETENESS_LABELS,
+  ADMIN_PROGRAM_STATUS_LABELS,
   ATTENDANCE_LABELS,
   COMPLETENESS_LABELS,
   EXISTENCE_LABELS,
   PLAN_EXECUTION_LABELS,
+  SPORT_CATEGORY_LABELS,
   YES_NO_LABELS,
+  type AdministrationReportBody,
   type DailyReportBody,
+  type SportCategory,
 } from "@/types";
 
 export interface ReportFieldRule {
@@ -21,6 +26,17 @@ export interface ReportFieldRule {
   requiredWhen?: (b: DailyReportBody, isMixed: boolean) => boolean;
   /** يحوّل القيمة المعتمدة إلى نص عربي للعرض */
   format: (b: DailyReportBody) => string;
+}
+
+export interface AdminReportFieldRule {
+  /** مفتاح الحقل في AdministrationReportBody */
+  key: keyof AdministrationReportBody;
+  /** العنوان كما يظهر في الجدول */
+  label: string;
+  /** شرط الإلزام (افتراضي: إلزامي) */
+  requiredWhen?: (b: AdministrationReportBody) => boolean;
+  /** يحوّل القيمة المعتمدة إلى نص عربي للعرض */
+  format: (b: AdministrationReportBody) => string;
 }
 
 /** توقيت مصر — الخادم قد يكون UTC (Vercel) فلا يصلح الاعتماد على توقيته. */
@@ -221,4 +237,106 @@ export function isReportComplete(
   instituteType: string,
 ): boolean {
   return missingReportFields(b, instituteType).length === 0;
+}
+
+// ─────────────────────────────────────────────────────────────
+// تقرير متابعة الإدارة التعليمية (عضو فني بالمنطقة)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * حقول تقرير المتابعة على مستوى الإدارة التعليمية:
+ * متابعة المسابقات والبرامج فقط (لا معلم تربية ولا كشكول معهد).
+ */
+export const ADMIN_REPORT_FIELDS: AdminReportFieldRule[] = [
+  {
+    key: "programName",
+    label: "اسم المسابقة / البرنامج",
+    format: (b) => b.programName || "—",
+  },
+  {
+    key: "programCategory",
+    label: "المسار",
+    format: (b) =>
+      b.programCategory
+        ? SPORT_CATEGORY_LABELS[b.programCategory as SportCategory]
+        : "—",
+  },
+  {
+    key: "programStatus",
+    label: "حالة التنفيذ",
+    format: (b) =>
+      b.programStatus ? ADMIN_PROGRAM_STATUS_LABELS[b.programStatus] : "—",
+  },
+  {
+    key: "teamsCount",
+    label: "عدد الفرق المشاركة",
+    requiredWhen: (b) => b.programStatus !== "no_teams",
+    format: (b) => (isEmpty(b.teamsCount) ? "—" : String(b.teamsCount)),
+  },
+  {
+    key: "studentsCount",
+    label: "عدد الطلاب المشاركين",
+    requiredWhen: (b) => b.programStatus !== "no_teams",
+    format: (b) => (isEmpty(b.studentsCount) ? "—" : String(b.studentsCount)),
+  },
+  {
+    key: "dataCompleteness",
+    label: "اكتمال بيانات المتابعة",
+    format: (b) =>
+      b.dataCompleteness
+        ? ADMIN_DATA_COMPLETENESS_LABELS[b.dataCompleteness]
+        : "—",
+  },
+  {
+    key: "commitmentsDone",
+    label: "إرسال الكشوف في الموعد",
+    format: (b) => (b.commitmentsDone ? YES_NO_LABELS[b.commitmentsDone] : "—"),
+  },
+  {
+    key: "recordsExistence",
+    label: "السجلات والكشوف لدى الإدارة",
+    format: (b) =>
+      b.recordsExistence ? EXISTENCE_LABELS[b.recordsExistence] : "—",
+  },
+  {
+    key: "financialPlan",
+    label: "الخطة المالية",
+    format: (b) => (b.financialPlan ? EXISTENCE_LABELS[b.financialPlan] : "—"),
+  },
+  {
+    key: "financialPlanExecution",
+    label: "مدى تنفيذ الخطة",
+    requiredWhen: (b) => b.financialPlan === "present",
+    format: (b) =>
+      b.financialPlanExecution
+        ? PLAN_EXECUTION_LABELS[b.financialPlanExecution]
+        : "—",
+  },
+  { key: "positives", label: "الإيجابيات", format: (b) => b.positives || "—" },
+  { key: "negatives", label: "السلبيات", format: (b) => b.negatives || "—" },
+  { key: "suggestions", label: "المقترحات", format: (b) => b.suggestions || "—" },
+  {
+    key: "generalNotes",
+    label: "ملاحظات عامة",
+    format: (b) => b.generalNotes || "—",
+  },
+];
+
+/** الحقول الظاهرة في جدول تقرير الإدارة (بعد تطبيق الشروط). */
+export function visibleAdminReportFields(
+  b: AdministrationReportBody,
+): AdminReportFieldRule[] {
+  return ADMIN_REPORT_FIELDS.filter((f) => f.requiredWhen?.(b) !== false);
+}
+
+/** عناوين حقول تقرير الإدارة الإلزامية التي لم تُملأ بعد. */
+export function missingAdminReportFields(b: AdministrationReportBody): string[] {
+  return ADMIN_REPORT_FIELDS.filter((f) => f.requiredWhen?.(b) !== false)
+    .filter((f) => isEmpty(b[f.key]))
+    .map((f) => f.label);
+}
+
+/** هل تقرير متابعة الإدارة مكتمل وجاهز للإرسال؟ */
+export function isAdminReportComplete(b: AdministrationReportBody): boolean {
+  return missingAdminReportFields(b).length === 0;
 }

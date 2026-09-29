@@ -53,7 +53,9 @@ function SidebarContent({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
-  const canManageEntities = session.role !== "institute";
+  // «العضو الفني» لا يدير المستخدمين ولا الهيكل التنظيمي (متابعة فقط)
+  const canManageEntities =
+    session.role !== "institute" && session.role !== "technical";
 
   return (
     <div className="flex h-full flex-col bg-slate-900 text-slate-300">

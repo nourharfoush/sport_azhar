@@ -2,19 +2,28 @@
 
 import { useState } from "react";
 import {
-  YES_NO,
-  YES_NO_LABELS,
+  ADMIN_DATA_COMPLETENESS,
+  ADMIN_DATA_COMPLETENESS_LABELS,
+  ADMIN_PROGRAM_STATUS,
+  ADMIN_PROGRAM_STATUS_LABELS,
   ATTENDANCE,
   ATTENDANCE_LABELS,
-  EXISTENCE,
-  EXISTENCE_LABELS,
   COMPLETENESS,
   COMPLETENESS_LABELS,
+  EXISTENCE,
+  EXISTENCE_LABELS,
   PLAN_EXECUTION,
   PLAN_EXECUTION_LABELS,
+  SPORT_CATEGORIES,
+  SPORT_CATEGORY_LABELS,
+  YES_NO,
+  YES_NO_LABELS,
+  type AdministrationReportBody,
+  type SportCategory,
+  type YesNo,
   type DailyReportBody,
 } from "@/types";
-import { missingReportFields, submitWindow } from "./reportRules";
+import { missingReportFields, submitWindow, missingAdminReportFields } from "./reportRules";
 
 /** عنوان قسم داخل النموذج. */
 function Section({
@@ -428,8 +437,320 @@ export function ReportFormFields({
   );
 }
 
+/**
+ * نموذج تقرير متابعة **إدارة تعليمية** (يملؤه «عضو فني» بالمنطقة).
+ * يركّز على المسابقات والبرامج فقط، دون حقول المعهد (المعلم/الكشكول/...).
+ */
+export function AdministrationReportFormFields({
+  administrationName,
+  body,
+  pending,
+  visitDate,
+}: {
+  administrationName: string;
+  body: AdministrationReportBody;
+  pending: boolean;
+  visitDate: string;
+}) {
+  const [b, setB] = useState<AdministrationReportBody>(body ?? {});
+  const missing = missingAdminReportFields(b);
+  const complete = missing.length === 0;
+  const window = submitWindow(visitDate);
+  const canSubmit = complete && window.allowed;
 
+  const set = <K extends keyof AdministrationReportBody>(
+    k: K,
+    v: AdministrationReportBody[K],
+  ) => setB((prev) => ({ ...prev, [k]: v }));
 
+  // اختيار «لا توجد فرق» ينظّف أعداد المشاركة حتى لا تبقى محفوظة من قبل
+  const setProgramStatus = (v: string) => {
+    setB((prev) => {
+      const next = {
+        ...prev,
+        programStatus: v as AdministrationReportBody["programStatus"],
+      };
+      if (v === "no_teams") {
+        delete next.teamsCount;
+        delete next.studentsCount;
+      }
+      return next;
+    });
+  };
+  const setFinancialPlan = (v: string) => {
+    setB((prev) => {
+      const next = {
+        ...prev,
+        financialPlan: v as AdministrationReportBody["financialPlan"],
+      };
+      if (v !== "present") delete next.financialPlanExecution;
+      return next;
+    });
+  };
 
+  return (
+    <div className="space-y-4 text-right">
+      <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+        <p className="text-xs font-semibold text-slate-500">الإدارة التعليمية</p>
+        <p className="text-base font-bold text-slate-900 mt-0.5">
+          {administrationName}
+        </p>
+      </div>
 
+      <Section n={1} title="المسابقة / البرنامج المتابَع">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls}>الاسم</label>
+            <input
+              type="text"
+              name="programName"
+              value={b.programName ?? ""}
+              onChange={(e) => set("programName", e.target.value)}
+              className={inputCls}
+              placeholder="مثال: بطولة كرة القدم للمرحلة الإعدادية"
+            />
+          </div>
+          <div>
+            <label className={labelCls}>المسار</label>
+            <select
+              name="programCategory"
+              value={b.programCategory ?? ""}
+              onChange={(e) =>
+                set("programCategory", e.target.value as SportCategory)
+              }
+              className={inputCls}
+            >
+              <option value="">-- اختر --</option>
+              {SPORT_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {SPORT_CATEGORY_LABELS[c]}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </Section>
 
+      <Section n={2} title="حالة التنفيذ">
+        <select
+          name="programStatus"
+          value={b.programStatus ?? ""}
+          onChange={(e) => setProgramStatus(e.target.value)}
+          className={inputCls}
+        >
+          <option value="">-- اختر --</option>
+          {ADMIN_PROGRAM_STATUS.map((s) => (
+            <option key={s} value={s}>
+              {ADMIN_PROGRAM_STATUS_LABELS[s]}
+            </option>
+          ))}
+        </select>
+      </Section>
+
+      {b.programStatus !== "no_teams" && (
+        <Section n={3} title="أعداد المشاركة">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>عدد الفرق المشاركة</label>
+              <input
+                type="number"
+                name="teamsCount"
+                min="0"
+                value={b.teamsCount ?? ""}
+                onChange={(e) =>
+                  set(
+                    "teamsCount",
+                    e.target.value === "" ? undefined : Number(e.target.value),
+                  )
+                }
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>عدد الطلاب المشاركين</label>
+              <input
+                type="number"
+                name="studentsCount"
+                min="0"
+                value={b.studentsCount ?? ""}
+                onChange={(e) =>
+                  set(
+                    "studentsCount",
+                    e.target.value === "" ? undefined : Number(e.target.value),
+                  )
+                }
+                className={inputCls}
+              />
+            </div>
+          </div>
+        </Section>
+      )}
+
+      <Section n={4} title="بيانات المتابعة لدى الإدارة">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls}>اكتمال البيانات</label>
+            <select
+              name="dataCompleteness"
+              value={b.dataCompleteness ?? ""}
+              onChange={(e) =>
+                set(
+                  "dataCompleteness",
+                  e.target.value as AdministrationReportBody["dataCompleteness"],
+                )
+              }
+              className={inputCls}
+            >
+              <option value="">-- اختر --</option>
+              {ADMIN_DATA_COMPLETENESS.map((s) => (
+                <option key={s} value={s}>
+                  {ADMIN_DATA_COMPLETENESS_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={labelCls}>إرسال الكشوف في الموعد</label>
+            <select
+              name="commitmentsDone"
+              value={b.commitmentsDone ?? ""}
+              onChange={(e) => set("commitmentsDone", e.target.value as YesNo)}
+              className={inputCls}
+            >
+              <option value="">-- اختر --</option>
+              {YES_NO.map((s) => (
+                <option key={s} value={s}>
+                  {YES_NO_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={labelCls}>السجلات والكشوف</label>
+            <select
+              name="recordsExistence"
+              value={b.recordsExistence ?? ""}
+              onChange={(e) =>
+                set(
+                  "recordsExistence",
+                  e.target.value as AdministrationReportBody["recordsExistence"],
+                )
+              }
+              className={inputCls}
+            >
+              <option value="">-- اختر --</option>
+              {EXISTENCE.map((s) => (
+                <option key={s} value={s}>
+                  {EXISTENCE_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={labelCls}>الخطة المالية</label>
+            <select
+              name="financialPlan"
+              value={b.financialPlan ?? ""}
+              onChange={(e) => setFinancialPlan(e.target.value)}
+              className={inputCls}
+            >
+              <option value="">-- اختر --</option>
+              {EXISTENCE.map((s) => (
+                <option key={s} value={s}>
+                  {EXISTENCE_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </div>
+          {b.financialPlan === "present" && (
+            <div>
+              <label className={labelCls}>مدى تنفيذ الخطة</label>
+              <select
+                name="financialPlanExecution"
+                value={b.financialPlanExecution ?? ""}
+                onChange={(e) =>
+                  set(
+                    "financialPlanExecution",
+                    e.target.value as AdministrationReportBody["financialPlanExecution"],
+                  )
+                }
+                className={inputCls}
+              >
+                <option value="">-- اختر --</option>
+                {PLAN_EXECUTION.map((s) => (
+                  <option key={s} value={s}>
+                    {PLAN_EXECUTION_LABELS[s]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      </Section>
+
+      <Section n={5} title="الإيجابيات">
+        <textarea name="positives" rows={2} value={b.positives ?? ""} onChange={(e) => set("positives", e.target.value)} className={inputCls} />
+      </Section>
+
+      <Section n={6} title="السلبيات">
+        <textarea name="negatives" rows={2} value={b.negatives ?? ""} onChange={(e) => set("negatives", e.target.value)} className={inputCls} />
+      </Section>
+
+      <Section n={7} title="المقترحات">
+        <textarea name="suggestions" rows={2} value={b.suggestions ?? ""} onChange={(e) => set("suggestions", e.target.value)} className={inputCls} />
+      </Section>
+
+      <Section n={8} title="ملاحظات عامة">
+        <textarea name="generalNotes" rows={3} value={b.generalNotes ?? ""} onChange={(e) => set("generalNotes", e.target.value)} className={inputCls} />
+      </Section>
+
+      <div className="pt-4 border-t border-slate-200 space-y-3">
+        {!window.allowed ? (
+          <div className="text-xs bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">
+            <p className="font-semibold text-rose-900 mb-1">إرسال التقرير مقصور على يوم المتابعة</p>
+            <p className="text-rose-800 leading-relaxed">{window.message}</p>
+            <p className="text-rose-700 mt-1">
+              يمكنك حفظ مسودة الآن، وإرسالها في يوم الموعد.
+            </p>
+          </div>
+        ) : complete ? (
+          <p className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+            ✓ {window.message} — كل الحقول مكتملة، يمكنك الإرسال.
+          </p>
+        ) : (
+          <div className="text-xs bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+            <p className="font-semibold text-amber-900 mb-1">
+              لا يمكن الإرسال قبل اكتمال الحقول ({missing.length} ناقص):
+            </p>
+            <p className="text-amber-800 leading-relaxed">{missing.join("، ")}</p>
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="submit"
+            name="intent"
+            value="submitted"
+            disabled={pending || !canSubmit}
+            title={canSubmit ? undefined : "التقرير يُرسل في يوم المتابعة فقط وبكامل الحقول"}
+            className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition"
+          >
+            {pending ? "جارٍ الحفظ..." : "إرسال التقرير"}
+          </button>
+          <button
+            type="submit"
+            name="intent"
+            value="draft"
+            disabled={pending}
+            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 text-sm font-semibold rounded-xl transition"
+          >
+            حفظ كمسودة
+          </button>
+        </div>
+        <p className="text-[11px] text-slate-500">
+          الإرسال متاح في يوم المتابعة فقط، ويتطلّب اكتمال كل الحقول. الحفظ كمسودة متاح دائمًا.
+        </p>
+      </div>
+    </div>
+  );
+}

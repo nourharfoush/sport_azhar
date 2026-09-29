@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/auth";
+﻿import { getSession } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import { User } from "@/models/User";
 import { Region } from "@/models/Region";
@@ -16,7 +16,8 @@ import type {
 export default async function UsersPage() {
   const session = await getSession();
   if (!session) redirect("/login");
-  if (session.role === "institute") redirect("/dashboard");
+  if (session.role === "institute" || session.role === "technical")
+    redirect("/dashboard");
 
   await dbConnect();
 
@@ -90,6 +91,7 @@ export default async function UsersPage() {
         ? {
             $or: [
               { role: "region", region: session.regionId },
+              { role: "technical", region: session.regionId },
               { role: "administration", administration: { $in: adminIds } },
               { role: "institute", institute: { $in: instituteIds } },
             ],
@@ -151,8 +153,10 @@ export default async function UsersPage() {
     let workplace = "—";
     if (u.role === "general") {
       workplace = "الإدارة العامة للرعاية الرياضية";
-    } else if (u.role === "region") {
-      workplace = regionId ? (regionNameById.get(regionId) ?? "منطقة أزهرية") : "منطقة أزهرية";
+    } else if (u.role === "region" || u.role === "technical") {
+      const rn = regionId ? (regionNameById.get(regionId) ?? "منطقة أزهرية") : "منطقة أزهرية";
+      workplace =
+        u.role === "technical" ? `${rn} — عضو فني` : rn;
     } else if (u.role === "administration") {
       const a = administrationId ? adminById.get(administrationId) : undefined;
       workplace = a
@@ -236,7 +240,7 @@ export default async function UsersPage() {
           {session.role === "general" &&
             "الإدارة العامة: إضافة وتعديل وحذف مستخدمي كل المستويات (المناطق، الإدارات، المعاهد)."}
           {session.role === "region" &&
-            "المنطقة الأزهرية: إضافة وتعديل وحذف مستخدمي منطقتك (مستخدم المنطقة، الإدارات، المعاهد)."}
+            "المنطقة الأزهرية: إضافة وتعديل وحذف مستخدمي منطقتك (مستخدم المنطقة، الأعضاء الفنيين، الإدارات، المعاهد)."}
           {session.role === "administration" &&
             "الإدارة التعليمية: إضافة وتعديل وحذف مستخدمي إدارتك (مستخدم الإدارة ومعاهدها)."}
         </p>

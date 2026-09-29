@@ -61,7 +61,7 @@ function validateActivity(
 /**
  * تحديد نطاق (مستوى) المسابقة الجديدة حسب دور المستخدم مع التحقق من الصلاحية:
  * - الإدارة العامة  => نهائي الجمهورية (general) فقط.
- * - المنطقة الأزهرية => نهائي منطقتها (region) أو تصفيات إحدى إداراتها (administration).
+ * - المنطقة الأزهرية / العضو الفني بها => نهائي منطقتها (region) أو تصفيات إحدى إداراتها (administration).
  * - الإدارة التعليمية => تصفيات إدارتها فقط (administration).
  * يعيد كائن النطاق أو رسالة خطأ.
  */
@@ -106,7 +106,7 @@ async function resolveRequestedScope(
     };
   }
 
-  if (session.role === "region") {
+  if (session.role === "region" || session.role === "technical") {
     if (!session.regionId) {
       return { error: "حسابك غير مرتبط بأي منطقة أزهرية." };
     }

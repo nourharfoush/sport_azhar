@@ -14,6 +14,7 @@ import {
   displayName,
   type DailyReportBody,
   type DailyReportStatus,
+  type Role,
   type VisitType,
 } from "@/types";
 import { refId, refName } from "@/lib/data";
@@ -37,6 +38,13 @@ export default async function FollowUpPage() {
     name: string;
     regionName: string;
     administrationName: string;
+    role: Role;
+  }> = [];
+  // الإدارات التعليمية (هدف متابعة «العضو الفني»)
+  let administrationOptions: Array<{
+    _id: string;
+    name: string;
+    regionName: string;
   }> = [];
   let instituteOptions: Array<{
     _id: string;
@@ -78,10 +86,18 @@ export default async function FollowUpPage() {
     supervisorOptions = supervisors.map((s) => ({
       _id: String(s._id),
       name: displayName(s.name),
+      role: s.role as Role,
       regionName: s.region ? (regionName.get(String(s.region)) ?? "") : "",
       administrationName: s.administration
         ? (adminName.get(String(s.administration)) ?? "")
         : "",
+    }));
+
+    administrationOptions = admins.map((a) => ({
+      _id: String(a._id),
+      name: a.name,
+      regionName:
+        a.region ? (regionName.get(String(a.region)) ?? "") : "",
     }));
 
     const insts = await Institute.find({
@@ -100,6 +116,10 @@ export default async function FollowUpPage() {
   const visitFilter: Record<string, unknown> = { month };
   if (session.role === "region" && session.regionId) {
     visitFilter.region = session.regionId;
+  } else if (session.role === "technical") {
+    // العضو الفني يتابع مواعيده هو فقط، وهي متابعات لإدارات تعليمية
+    visitFilter.supervisor = session.id;
+    visitFilter.kind = "administration";
   } else if (session.role === "administration" && session.administrationId) {
     visitFilter.administration = session.administrationId;
   } else if (session.role === "institute" && session.instituteId) {
@@ -141,6 +161,7 @@ export default async function FollowUpPage() {
           : undefined) || "مشترك",
       administrationName: refName(v.administration) ?? "—",
       regionName: refName(v.region) ?? "—",
+      kind: ((v.kind ?? "institute") as "institute" | "administration"),
       reportStatus: (r?.status as DailyReportStatus | undefined) ?? "pending",
       body: (r?.body as DailyReportBody | undefined) ?? {},
     };
@@ -156,9 +177,11 @@ export default async function FollowUpPage() {
           الخطة الشهرية والمتابعات اليومية
         </h1>
         <p className="text-sm text-slate-500 mt-1">
-          {isPlanManager
-            ? "ضع خطة الشهر لكل الموجّهين في نطاقك، وتابع تقاريرهم اليومية المرسلة."
-            : "مواعيدك في الخطة الشهرية، ولكل يوم تقرير تكتبه ثم ترسله."}
+          {session.role === "technical"
+            ? "متابعتك مخصّصة للمسابقات والبرامج على مستوى الإدارات التعليمية بالمنطقة، ولكل يوم تقرير تكتبه ثم ترسله."
+            : isPlanManager
+              ? "ضع خطة الشهر لكل الموجّهين في نطاقك (ومنهم الأعضاء الفنيون لمتابعة إداراتهم)، وتابع تقاريرهم اليومية المرسلة."
+              : "مواعيدك في الخطة الشهرية، ولكل يوم تقرير تكتبه ثم ترسله."}
         </p>
       </div>
 
@@ -168,6 +191,7 @@ export default async function FollowUpPage() {
           <MonthlyPlanBuilder
             supervisors={supervisorOptions}
             institutes={instituteOptions}
+            administrations={administrationOptions}
             defaultMonth={month}
           />
         </section>
